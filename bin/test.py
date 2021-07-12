@@ -39,4 +39,3 @@ if __name__ == '__main__':
         net(inputs)
         if i == 1:
             break;
-

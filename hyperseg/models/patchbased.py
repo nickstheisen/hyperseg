@@ -190,4 +190,3 @@ class SSRN(nn.Module):
         X = self.fc(X.view(-1, self.num_kernels))
 
         return X
-
