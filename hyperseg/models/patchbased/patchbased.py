@@ -6,6 +6,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+def list_models():
+    model_list = ['SSRN']
+    return model_list
+
+def get_model(modelname, num_bands, num_classes):
+    model_list = list_models()
+    if modelname in model_list:
+        if modelname == 'SSRN':
+            return SSRN(num_bands=num_bands, num_classes=num_classes)
+    else :
+        raise runtime_error(f'Model with name `{modelname}` does not exist!')
+
 class ConvBN3d(nn.Module):
     def __init__(self,
             in_channels,
@@ -48,6 +60,7 @@ class ConvBN2d(nn.Module):
         self.bn = nn.BatchNorm2d(
                 num_kernels, eps=0.001, momentum=0.1,
                 affine=True)
+
     def forward(self, X):
         X = self.conv(X)
         X = F.relu(self.bn(X))
@@ -178,7 +191,7 @@ class SSRN(nn.Module):
         X = self.spectral_resBlock_1(X)
         X = self.spectral_resBlock_2(X)
         X = self.spectral_output_conv(X)
-        X = torch.squeeze(X)
+        X = torch.squeeze(X, dim=2)
         
         # extract spatial features
         X = self.spatial_input_conv(X)
@@ -188,5 +201,4 @@ class SSRN(nn.Module):
         # pooling and classification
         X = self.avg_pool(X)
         X = self.fc(X.view(-1, self.num_kernels))
-
         return X
