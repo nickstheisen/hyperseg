@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from hsdatasets.transforms import ToTensor, InsertEmptyChannelDim, PermuteData
-from hsdatasets.remotesensing import RSDataset
+from hsdatasets.remotesensing import HSDataModule
 from hyperseg.models.patchbased import PatchbasedClassifier
 
 import torch
@@ -18,5 +18,5 @@ import argparse
 
 if __name__ == '__main__':
     cli = LightningCLI(PatchbasedClassifier, 
-            RSDataset, 
+            HSDataModule, 
             seed_everything_default=42)
