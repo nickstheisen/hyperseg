@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from .imagebasedclassifier import ImagebasedClassifier
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -77,11 +78,28 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True):
-        super(UNet, self).__init__()
+class UNet(ImagebasedClassifier):
+    def __init__(self, 
+            n_classes: int,
+            n_channels: int, 
+            label_def: str,
+            loss_name: str = 'cross_entropy',
+            learning_rate: float = 1e-4,
+            optimizer_name: str = 'SGD',
+            momentum: float = 0.0,
+            ignore_index: int = 0,
+            mdmc_average: str = 'samplewise',
+            bilinear : bool = True):
+        super(UNet, self).__init__(
+                n_classes=n_classes,
+                label_def=label_def,
+                loss_name=loss_name,
+                learning_rate=learning_rate,
+                optimizer_name=optimizer_name,
+                momentum=momentum,
+                ignore_index=ignore_index,
+                mdmc_average=mdmc_average)
         self.n_channels = n_channels
-        self.n_classes = n_classes
         self.bilinear = bilinear
 
         self.inc = DoubleConv(n_channels, 64)
@@ -97,6 +115,7 @@ class UNet(nn.Module):
         self.outc = OutConv(64, n_classes)
 
     def forward(self, x):
+        print(self.learning_rate)
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)

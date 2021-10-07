@@ -7,6 +7,9 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.cli import LightningCLI
 
 if __name__ == '__main__':
-    cli = LightningCLI(ImagebasedClassifier, 
-            HSDataModule, 
+    cli = LightningCLI(
+            model_class=ImagebasedClassifier, 
+            datamodule_class=HSDataModule, 
+            subclass_mode_model=True,
+            subclass_mode_data=True,
             seed_everything_default=42)
