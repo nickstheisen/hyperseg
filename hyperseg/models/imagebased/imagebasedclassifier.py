@@ -196,18 +196,28 @@ class SemanticSegmentationClassifier(pl.LightningModule):
 
     def _plot_batch_prediction(self, pred, label):
         batch_size = label.shape[0]
-        figure, axes = plt.subplots(nrows=2, ncols=batch_size, squeeze=False)
+        # four predictions per row, followed by four labelimages
+        n_cols = 4
+        n_rows = 2 * int((batch_size + 3)/4)
+        figure, axes = plt.subplots(nrows=n_rows, ncols=n_cols, squeeze=False, figsize=(12,12))
         for i in range(batch_size):
-            axes[0, i].imshow(self.label_colors[label[i]].squeeze())
-            axes[1, i].imshow(self.label_colors[pred[i]].squeeze())
+            r = i % 4
+            c = 2 * int(i / 4)
+            
+            axes[c, r].imshow(self.label_colors[label[i]].squeeze())
+            axes[c+1, r].imshow(self.label_colors[pred[i]].squeeze())
+
+            # remove axes for cleaner image
+            axes[c, r].axis('off')
+            axes[c+1, r].axis('off')
 
         # add legend that shows label color class mapping
         handles = []
         for i, color in enumerate(self.label_colors):
             handles.append(mpatches.Patch(color=color*(1./255), label=self.label_names[i]))
 
-        plt.legend(handles=handles, loc='center left', ncol=2, bbox_to_anchor=(1.04, 1))
-        plt.tight_layout()
+        figure.legend(handles=handles, loc='lower left', ncol=4, mode='expand')
+        figure.tight_layout()
         return figure
 
 class ImagebasedClassifier(pl.LightningModule):
