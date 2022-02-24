@@ -39,8 +39,18 @@ if __name__ == '__main__':
             )
 
     trainer = Trainer(
-            gpus=1, 
-            max_epochs=300,
+            gpus=[3], 
+            max_epochs=600,
+            auto_lr_find=True,
             )
+    
+    # find best learning rate for model and data
+    '''
+    model.export_metrics=False
+    trainer.tune(model, data_module)
+    model.export_metrics=True
+    '''
+
+    # train model
     trainer.fit(model, data_module)
     

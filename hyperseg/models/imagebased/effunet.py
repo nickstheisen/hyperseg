@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 from efficientnet_pytorch import EfficientNet
-from .imagebasedclassifier import SemanticSegmentationClassifier
+from .imagebased import SemanticSegmentationModule
 from torchsummary import summary
 
 
@@ -64,7 +64,7 @@ def epoch_hook(model, image):
     encoder_out = [hook_values[i] for i in indices] # get layer outputs for selected indices
 
 
-class EffUNet(SemanticSegmentationClassifier):
+class EffUNet(SemanticSegmentationModule):
     def __init__(self,
             n_channels: int,
             n_classes: int,
@@ -90,6 +90,8 @@ class EffUNet(SemanticSegmentationClassifier):
                 ignore_index=ignore_index,
                 mdmc_average=mdmc_average)
         global layers, shapes
+
+        self.save_hyperparameters()
 
         if model not in set(['b0','b1','b2','b3','b4','b5','b6','b7']):
                 raise Exception(f'{model} unavailable.')

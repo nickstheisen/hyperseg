@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from .imagebasedclassifier import ImagebasedClassifier
+from .imagebased import SemanticSegmentationModule
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -78,7 +78,7 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class UNet(ImagebasedClassifier):
+class UNet(SemanticSegmentationModule):
     def __init__(self, 
             n_classes: int,
             n_channels: int, 
