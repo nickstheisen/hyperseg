@@ -80,29 +80,21 @@ class OutConv(nn.Module):
 
 class UNet(SemanticSegmentationModule):
     def __init__(self, 
-            n_classes: int,
-            n_channels: int, 
-            label_def: str,
-            loss_name: str = 'cross_entropy',
-            learning_rate: float = 1e-4,
-            optimizer_name: str = 'SGD',
-            momentum: float = 0.0,
-            ignore_index: int = 0,
-            mdmc_average: str = 'samplewise',
-            bilinear : bool = True):
-        super(UNet, self).__init__(
-                n_classes=n_classes,
-                label_def=label_def,
-                loss_name=loss_name,
-                learning_rate=learning_rate,
-                optimizer_name=optimizer_name,
-                momentum=momentum,
-                ignore_index=ignore_index,
-                mdmc_average=mdmc_average)
-        self.n_channels = n_channels
-        self.bilinear = bilinear
+            bilinear : bool = True,
+            dim_reduction  : int = None,
+            **kwargs):
+        super(UNet, self).__init__(**kwargs)
 
-        self.inc = DoubleConv(n_channels, 64)
+        self.save_hyperparameters()
+
+        self.bilinear = bilinear
+        self.dr = dim_reduction
+
+        if self.dr is not None:
+            self.dr_layer = torch.nn.Conv2d(self.n_channels, self.dr, 1)
+            self.inc = DoubleConv(self.dr, 64)
+        else :
+            self.inc = DoubleConv(self.n_channels, 64)
         self.down1 = Down(64, 128)
         self.down2 = Down(128, 256)
         self.down3 = Down(256, 512)
@@ -112,9 +104,11 @@ class UNet(SemanticSegmentationModule):
         self.up2 = Up(512, 256 // factor, bilinear)
         self.up3 = Up(256, 128 // factor, bilinear)
         self.up4 = Up(128, 64, bilinear)
-        self.outc = OutConv(64, n_classes)
+        self.outc = OutConv(64, self.n_classes)
 
     def forward(self, x):
+        if self.dr is not None:
+            x = self.dr_layer(x)
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)

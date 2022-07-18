@@ -14,7 +14,16 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 plt.switch_backend('agg')
 
+from typing import Optional
+
+def inv_num_of_samples(histogram):
+    return histogram.sum()/histogram
+
+def inv_square_num_of_samples(histogram):
+    return histogram.sum()/torch.sqrt(histogram)
+
 class SemanticSegmentationModule(pl.LightningModule):
+    
     def __init__(self, 
             n_channels: int,
             n_classes: int,
@@ -25,8 +34,12 @@ class SemanticSegmentationModule(pl.LightningModule):
             momentum: float,
             ignore_index: int,
             mdmc_average: str,
+            class_weighting: str = None,
+            **kwargs
     ):
-        super(SemanticSegmentationModule, self).__init__()
+        super(SemanticSegmentationModule, self).__init__(**kwargs)
+
+        self.hparams["model_name"] = type(self).__name__
 
         self.n_classes = n_classes
         self.n_channels = n_channels
@@ -38,8 +51,8 @@ class SemanticSegmentationModule(pl.LightningModule):
 
         # loss
         self.ignore_index = ignore_index
-        if loss_name == 'cross_entropy':
-            self.criterion = nn.CrossEntropyLoss(ignore_index=self.ignore_index)
+        self.class_weighting = class_weighting
+        self.loss_name = 'cross_entropy'
 
         # class definitions
         self.label_names, self.label_colors = self._load_label_def(label_def)
@@ -156,13 +169,33 @@ class SemanticSegmentationModule(pl.LightningModule):
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.test_metrics["Test/conf_mat"] = self.confmat_test
 
-    # pretrain_routine hook
-    def on_pretrain_routine_start(self):
+
+    def setup(self, stage: Optional[str]=None):
+        if self.class_weighting is not None:
+            train_c_hist, _, _ = self.trainer.datamodule.class_histograms() 
+            if self.class_weighting == 'INS':
+                self.class_weights = inv_num_of_samples(train_c_hist)
+            elif self.class_weighting == 'ISNS':
+                self.class_weights = inv_square_num_of_samples(train_c_hist)
+            else :
+                raise RuntimeError(f'Class weighting strategy "{self.class_weighting}" does'
+                        ' not exist or is not implemented yet!')
+        else:
+            self.class_weights = torch.ones(self.n_classes)
+        
+        if self.loss_name == 'cross_entropy':
+            self.criterion = nn.CrossEntropyLoss(
+                    ignore_index=self.ignore_index,
+                    weight=self.class_weights)
+        else : 
+            raise RuntimeError(f'Loss function "{self.loss_name}" is not available '
+                    'or is not implemented yet')
+
         # logging
         if self.export_metrics:
             self.confmat_log_dir = Path(self.logger.log_dir).joinpath('confmats')
             self.confmat_log_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def configure_optimizers(self):
         if self.optimizer_name == 'SGD':
             optimizer = torch.optim.SGD(self.parameters(), 
@@ -200,7 +233,7 @@ class SemanticSegmentationModule(pl.LightningModule):
     def training_epoch_end(self, outs):
         if self.export_metrics:
             for name, metric in self.train_metrics.items():
-                if "ConfusionMatrix" in name and False :
+                if "conf_mat" in name:
                     confmat_epoch = metric.compute()
                     self.log(name, confmat_epoch)
 
@@ -240,7 +273,7 @@ class SemanticSegmentationModule(pl.LightningModule):
     def validation_epoch_end(self, outs):
         if self.export_metrics:
             for name, metric in self.val_metrics.items():
-                if "ConfusionMatrix" in name and False :
+                if "conf_mat" in name:
                     confmat_epoch = metric.compute()
                     self.log(name, confmat_epoch)
 
@@ -274,7 +307,7 @@ class SemanticSegmentationModule(pl.LightningModule):
     def test_epoch_end(self, outs):
         if self.export_metrics:
             for name, metric in self.test_metrics.items():
-                if "ConfusionMatrix" in name and False :
+                if "conf_mat" in name :
                     confmat_epoch = metric.compute()
                     self.log(name, confmat_epoch)
 
