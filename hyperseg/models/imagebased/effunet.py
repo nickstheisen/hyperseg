@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 from efficientnet_pytorch import EfficientNet
-from .imagebasedclassifier import SemanticSegmentationClassifier
+from .imagebased import SemanticSegmentationModule
 from torchsummary import summary
 
 
@@ -64,32 +64,17 @@ def epoch_hook(model, image):
     encoder_out = [hook_values[i] for i in indices] # get layer outputs for selected indices
 
 
-class EffUNet(SemanticSegmentationClassifier):
+class EffUNet(SemanticSegmentationModule):
     def __init__(self,
-            n_channels: int,
-            n_classes: int,
-            label_def: str,
-            loss_name: str = 'cross_entropy',
-            learning_rate: float = 1e-4,
-            optimizer_name: str = 'SGD',
-            momentum: float = 0.0,
-            ignore_index: int = 0,
-            mdmc_average: str = 'samplewise',
             model='b0',
             dropout=0.1,
             freeze_backbone=True,
-            pretrained=True):
-        super(EffUNet,self).__init__(
-                n_channels=n_channels,
-                n_classes=n_classes,
-                label_def=label_def,
-                loss_name=loss_name,
-                learning_rate=learning_rate,
-                optimizer_name=optimizer_name,
-                momentum=momentum,
-                ignore_index=ignore_index,
-                mdmc_average=mdmc_average)
+            pretrained=True,
+            **kwargs):
+        super(EffUNet,self).__init__(**kwargs)
         global layers, shapes
+
+        self.save_hyperparameters()
 
         if model not in set(['b0','b1','b2','b3','b4','b5','b6','b7']):
                 raise Exception(f'{model} unavailable.')
@@ -99,7 +84,7 @@ class EffUNet(SemanticSegmentationClassifier):
                 self.encoder = EfficientNet.from_name(f'efficientnet-{model}')
 
         # Dim. reduction reduce dimensionality to 3d
-        self.input = torch.nn.Conv2d(n_channels, 3, 1)
+        self.input = torch.nn.Conv2d(self.n_channels, 3, 1)
 
         # Disable non required layers by replacing them with identity
         self.encoder._conv_head=torch.nn.Identity()
@@ -130,7 +115,12 @@ class EffUNet(SemanticSegmentationClassifier):
                 self.decoder[i].append(double_conv(shapes[i][1],shapes[i+1][1],dropout).to(self.device))
 
         #output layer
-        self.out = nn.Conv2d(shapes[-1][1],n_classes,kernel_size=1).to(self.device)
+        self.out = nn.Conv2d(shapes[-1][1],self.n_classes,kernel_size=1).to(self.device)
+
+    @staticmethod
+    def add_model_specific_args(parent_parser):
+        parser = parent_parser.add_argument_group("EffUNet")
+        return parent_parser
 
     def forward(self, image):
         global layers

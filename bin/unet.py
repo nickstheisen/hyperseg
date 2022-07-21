@@ -1,6 +1,6 @@
 from hsdatasets.groundbased.prep import download_dataset
 from hsdatasets.groundbased.groundbased import HyKo2
-from hyperseg.models.imagebased import EffUNet
+from hyperseg.models.imagebased import UNet
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -24,7 +24,7 @@ if __name__ == '__main__':
             n_classes=n_classes,
             manual_seed=manual_seed)
 
-    model = EffUNet(
+    model = UNet(
             n_channels=15,
             n_classes=n_classes,
             label_def='/home/nick/data/hyko2_semantic_labels.txt',
@@ -34,22 +34,19 @@ if __name__ == '__main__':
             momentum=0.0,
             ignore_index=10,
             mdmc_average='samplewise',
-            model='b0',
-            dropout=0.1,
-            freeze_backbone=False,
-            pretrained=False,
+            bilinear=True,
             class_weighting='ISNS')
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",
-            filename="checkpoint-effUNet-{epoch:02d}-{val_iou_epoch:.2f}",
+            filename="checkpoint-UNet-{epoch:02d}-{val_iou_epoch:.2f}",
             save_top_k=3,
             mode='max'
             )
 
     trainer = Trainer(
             callbacks=[checkpoint_callback],
-            gpus=[2], 
+            gpus=[3], 
             max_epochs=600,
             auto_lr_find=True,
             )
