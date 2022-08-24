@@ -216,9 +216,35 @@ class SemanticSegmentationModule(pl.LightningModule):
     def training_step(self, train_batch, batch_idx):
         inputs, labels = train_batch
         prediction = self.forward(inputs)
-
+        '''
+        print("===== IMAGES ====")
+        print(inputs.dtype)
+        print(inputs.element_size())
+        print(inputs.nelement())
+        print(inputs.element_size()*inputs.nelement())
+        print("===== LABELS ====")        
+        print(labels.dtype)
+        print(labels.element_size())
+        print(labels.nelement())
+        print(labels.element_size()*labels.nelement())
+        '''
         prediction =  T.Resize((labels.shape[1:3]))(prediction)
+        '''
+        print("===== prediction ====")        
+        print(prediction.dtype)
+        print(prediction.element_size())
+        print(prediction.nelement())
+        print(prediction.element_size()*prediction.nelement())
+        '''
+
         loss = self.criterion(prediction, labels.squeeze(dim=1)) 
+        '''
+        print("===== loss ====")        
+        print(loss.dtype)
+        print(loss.element_size())
+        print(loss.nelement())
+        print(loss.element_size()*loss.nelement())
+        '''
 
         if self.export_metrics:
             prediction = prediction.argmax(dim=1, keepdims=True)
@@ -235,7 +261,6 @@ class SemanticSegmentationModule(pl.LightningModule):
             for name, metric in self.train_metrics.items():
                 if "conf_mat" in name:
                     confmat_epoch = metric.compute()
-                    self.log(name, confmat_epoch)
 
                     # plot confusion_matrix
                     confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
@@ -275,7 +300,6 @@ class SemanticSegmentationModule(pl.LightningModule):
             for name, metric in self.val_metrics.items():
                 if "conf_mat" in name:
                     confmat_epoch = metric.compute()
-                    self.log(name, confmat_epoch)
 
                     # plot confusion_matrix
                     confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
@@ -309,7 +333,6 @@ class SemanticSegmentationModule(pl.LightningModule):
             for name, metric in self.test_metrics.items():
                 if "conf_mat" in name :
                     confmat_epoch = metric.compute()
-                    self.log(name, confmat_epoch)
 
                     # plot confusion_matrix
                     confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
