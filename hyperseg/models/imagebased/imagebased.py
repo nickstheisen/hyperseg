@@ -81,6 +81,12 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/accuracy-macro"] = self.acc_train_macro
+        self.acc_train_class = torchmetrics.Accuracy(
+                 num_classes=self.n_classes+1, # labels + undefined
+                ignore_index=self.ignore_index, 
+                mdmc_average=self.mdmc_average, 
+                average='none')
+        self.train_metrics["Train/accuracy-class"] = self.acc_train_class
         self.f1_train_micro = torchmetrics.F1Score(
                 num_classes=self.n_classes+1, # labels + undefined
                 ignore_index=self.ignore_index, 
@@ -93,10 +99,21 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/f1-macro"] = self.f1_train_macro
+        self.f1_train_class = torchmetrics.F1Score(
+                 num_classes=self.n_classes+1, # labels + undefined
+                ignore_index=self.ignore_index, 
+                mdmc_average=self.mdmc_average, 
+                average='none')
+        self.train_metrics["Train/f1-class"] = self.f1_train_class
         self.jaccard_train = torchmetrics.JaccardIndex(
                 ignore_index=self.ignore_index, 
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.train_metrics["Train/jaccard"] = self.jaccard_train
+        self.jaccard_train_class = torchmetrics.JaccardIndex(
+                average='none',
+                ignore_index=self.ignore_index,
+                num_classes=self.n_classes+1) # number of labels + undefined
+        self.train_metrics["Train/jaccard-class"] = self.jaccard_train_class
         self.confmat_train = torchmetrics.ConfusionMatrix(
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.train_metrics["Train/conf_mat"] = self.confmat_train
@@ -115,6 +132,12 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/accuracy-macro"] = self.acc_val_macro
+        self.acc_val_class = torchmetrics.Accuracy(
+                num_classes=self.n_classes+1, # labels + undefined
+                ignore_index=self.ignore_index, 
+                mdmc_average=self.mdmc_average, 
+                average='none')
+        self.val_metrics["Validation/accuracy-class"] = self.acc_val_class
         self.f1_val_micro = torchmetrics.F1Score(
                 num_classes=self.n_classes+1, # labels + undefined
                 ignore_index=self.ignore_index, 
@@ -127,10 +150,21 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/f1-macro"] = self.f1_val_macro
-        self.val_jaccard = torchmetrics.JaccardIndex(
+        self.f1_val_class = torchmetrics.F1Score(
+                num_classes=self.n_classes+1, # labels + undefined
+                ignore_index=self.ignore_index, 
+                mdmc_average=self.mdmc_average, 
+                average='none')
+        self.val_metrics["Validation/f1-class"] = self.f1_val_class
+        self.jaccard_val = torchmetrics.JaccardIndex(
                 ignore_index=self.ignore_index, 
                 num_classes=self.n_classes+1) # number of labels + undefined
-        self.val_metrics["Validation/jaccard"] = self.val_jaccard
+        self.val_metrics["Validation/jaccard"] = self.jaccard_val
+        self.jaccard_val_class = torchmetrics.JaccardIndex(
+                average='none',
+                ignore_index=self.ignore_index,
+                num_classes=self.n_classes+1) # number of labels + undefined
+        self.val_metrics["Validation/jaccard-class"] = self.jaccard_val_class
         self.confmat_val = torchmetrics.ConfusionMatrix(
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.val_metrics["Validation/conf_mat"] = self.confmat_val
@@ -149,6 +183,12 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/accuracy-macro"] = self.acc_test_macro
+        self.acc_test_class = torchmetrics.Accuracy(
+                num_classes=self.n_classes+1, # labels + undefined
+                ignore_index=self.ignore_index, 
+                mdmc_average=self.mdmc_average, 
+                average='none')
+        self.test_metrics["Test/accuracy-class"] = self.acc_test_class
         self.f1_test_micro = torchmetrics.F1Score(
                 num_classes=self.n_classes+1, # labels + undefined
                 ignore_index=self.ignore_index, 
@@ -161,14 +201,24 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/f1-macro"] = self.f1_test_macro
+        self.f1_test_class = torchmetrics.F1Score(
+                num_classes=self.n_classes+1, # labels + undefined
+                ignore_index=self.ignore_index, 
+                mdmc_average=self.mdmc_average, 
+                average='none')
+        self.test_metrics["Test/f1-class"] = self.f1_test_class
         self.jaccard_test = torchmetrics.JaccardIndex(
                 ignore_index=self.ignore_index, 
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.test_metrics["Test/jaccard"] = self.jaccard_test
+        self.jaccard_test_class = torchmetrics.JaccardIndex(
+                average='none',
+                ignore_index=self.ignore_index,
+                num_classes=self.n_classes+1) # number of labels + undefined
+        self.test_metrics["Test/jaccard-class"] = self.jaccard_test_class
         self.confmat_test = torchmetrics.ConfusionMatrix(
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.test_metrics["Test/conf_mat"] = self.confmat_test
-
 
     def setup(self, stage: Optional[str]=None):
         if self.class_weighting is not None:
@@ -193,8 +243,13 @@ class SemanticSegmentationModule(pl.LightningModule):
 
         # logging
         if self.export_metrics:
+            # confusion matrices
             self.confmat_log_dir = Path(self.logger.log_dir).joinpath('confmats')
             self.confmat_log_dir.mkdir(parents=True, exist_ok=True)
+
+            # class-wise metrics
+            self.classmetric_log_dir = Path(self.logger.log_dir).joinpath('class-metrics')
+            self.classmetric_log_dir.mkdir(parents=True, exist_ok=True)
 
     def configure_optimizers(self):
         if self.optimizer_name == 'SGD':
@@ -228,6 +283,10 @@ class SemanticSegmentationModule(pl.LightningModule):
         print(labels.nelement())
         print(labels.element_size()*labels.nelement())
         '''
+
+        # convert prediction to same shape as ground-truth labels
+        # (? pretty sure this is what happens, but I should have
+        #  added a comment in the first place)
         prediction =  T.Resize((labels.shape[1:3]))(prediction)
         '''
         print("===== prediction ====")        
@@ -265,18 +324,38 @@ class SemanticSegmentationModule(pl.LightningModule):
                     # plot confusion_matrix
                     confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
                     confmat_logpath = self.confmat_log_dir.joinpath(
-                            f'confmat_val_epoch{self.current_epoch}.csv')
+                            f'confmat_train_epoch{self.current_epoch}.csv')
                     self._export_confmat(confmat_logpath, confmat_epoch)
-                    self.logger.experiment.add_figure("Confusion Matrix (validation)", 
+                    self.logger.experiment.add_figure("Train/confusion-matrix", 
                             self._plot_confmat(confmat_epoch),
                             self.current_epoch)
-                else :
+                elif "class" in name:
+                    # actually compute score from logs
+                    score_epoch = metric.compute()
+                    
+                    # detach from graph, retrieve from gpu-memory, convert to numpy array
+                    score_epoch = score_epoch.detach().cpu().numpy()
+
+                    # extract metric name (remove 'Validation/','Train/','Test/' and replace spaces)
+                    metric_name = name.split('/')[1].replace(' ', '_')
+
+                    # export and plot classwise scores
+                    score_logpath = self.classmetric_log_dir.joinpath(
+                            f'{metric_name}_train_epoch{self.current_epoch}.csv')
+                    self._export_classmetric(score_logpath, score_epoch)
+                    self.logger.experiment.add_figure(f"Train/{metric_name}",
+                            self._plot_classmetric(score_epoch),
+                            self.current_epoch)
+                else:
                     self.log(name, metric.compute())
 
     def validation_step(self, val_batch, batch_idx):
         inputs, labels = val_batch
         prediction = self.forward(inputs)
 
+        # convert prediction to same shape as ground-truth labels
+        # (? pretty sure this is what happens, but I should have
+        #  added a comment in the first place)
         prediction =  T.Resize((labels.shape[1:3]))(prediction)
         loss = self.criterion(prediction, labels.squeeze(dim=1))
 
@@ -306,9 +385,27 @@ class SemanticSegmentationModule(pl.LightningModule):
                     confmat_logpath = self.confmat_log_dir.joinpath(
                             f'confmat_val_epoch{self.current_epoch}.csv')
                     self._export_confmat(confmat_logpath, confmat_epoch)
-                    self.logger.experiment.add_figure("Confusion Matrix (validation)", 
+                    self.logger.experiment.add_figure("Validation/confusion-matrix", 
                             self._plot_confmat(confmat_epoch),
                             self.current_epoch)
+                elif "class" in name:
+                    # actually compute score from logs
+                    score_epoch = metric.compute()
+                    
+                    # detach from graph, retrieve from gpu-memory, convert to numpy array
+                    score_epoch = score_epoch.detach().cpu().numpy()
+
+                    # extract metric name (remove 'Validation/','Train/','Test/' and replace spaces)
+                    metric_name = name.split('/')[1].replace(' ', '_')
+
+                    # export and plot classwise scores
+                    score_logpath = self.classmetric_log_dir.joinpath(
+                            f'{metric_name}_val_epoch{self.current_epoch}.csv')
+                    self._export_classmetric(score_logpath, score_epoch)
+                    self.logger.experiment.add_figure(f"Validation/{metric_name}",
+                            self._plot_classmetric(score_epoch),
+                            self.current_epoch)
+
                 else :
                     self.log(name, metric.compute())
 
@@ -316,6 +413,9 @@ class SemanticSegmentationModule(pl.LightningModule):
         inputs, labels = test_batch
         prediction = self.forward(inputs)
 
+        # convert prediction to same shape as ground-truth labels
+        # (? pretty sure this is what happens, but I should have
+        #  added a comment in the first place)
         prediction =  T.Resize((labels.shape[1:3]))(prediction)
         loss = self.criterion(prediction, labels.squeeze(dim=1))
         
@@ -325,8 +425,6 @@ class SemanticSegmentationModule(pl.LightningModule):
 
             for _, metric in self.test_metrics.items():
                 metric(prediction, labels)
-
-            self.confmat_test(prediction, labels)
 
     def test_epoch_end(self, outs):
         if self.export_metrics:
@@ -339,9 +437,27 @@ class SemanticSegmentationModule(pl.LightningModule):
                     confmat_logpath = self.confmat_log_dir.joinpath(
                             f'confmat_val_epoch{self.current_epoch}.csv')
                     self._export_confmat(confmat_logpath, confmat_epoch)
-                    self.logger.experiment.add_figure("Confusion Matrix (validation)", 
+                    self.logger.experiment.add_figure("Test/confusion-matrix", 
                             self._plot_confmat(confmat_epoch),
                             self.current_epoch)
+                elif "class" in name:
+                    # actually compute score from logs
+                    score_epoch = metric.compute()
+                    
+                    # detach from graph, retrieve from gpu-memory, convert to numpy array
+                    score_epoch = score_epoch.detach().cpu().numpy()
+
+                    # extract metric name (remove 'Validation/','Train/','Test/' and replace spaces)
+                    metric_name = name.split('/')[1].replace(' ', '_')
+
+                    # export and plot classwise scores
+                    score_logpath = self.classmetric_log_dir.joinpath(
+                            f'{metric_name}_test_epoch{self.current_epoch}.csv')
+                    self._export_classmetric(score_logpath, score_epoch)
+                    self.logger.experiment.add_figure(f"Test/{metric_name}",
+                            self._plot_classmetric(score_epoch),
+                            self.current_epoch)
+
                 else :
                     self.log(name, metric.compute())
 
@@ -349,9 +465,28 @@ class SemanticSegmentationModule(pl.LightningModule):
         np.savetxt(path, confmat)
 
     def _plot_confmat(self, confmat):
-        figure = plt.figure()
-        plt.matshow(confmat[:-1,:-1], fignum=0)
-        return figure
+        fig, ax = plt.subplots()
+        label_ids = np.arange(confmat.shape[0]-1)
+        ax.matshow(confmat[:-1,:-1])
+        ax.set_xticks(label_ids)
+        ax.set_xticklabels([self.label_names[i] for i in label_ids], rotation=90)
+        ax.set_yticks(label_ids)
+        ax.set_yticklabels([self.label_names[i] for i in label_ids])
+        plt.tight_layout()
+
+        return fig
+
+    def _export_classmetric(self, path, scores):
+        np.savetxt(path, scores)
+
+    def _plot_classmetric(self, scores):
+        fig, ax = plt.subplots()
+        label_ids = np.arange(scores.shape[0])
+        ax.bar(label_ids, scores)
+        ax.set_xticks(label_ids)
+        ax.set_xticklabels([self.label_names[i] for i in label_ids], rotation=90)
+        plt.tight_layout()
+        return fig
 
     def _load_label_def(self, label_def):
         label_defs = np.loadtxt(label_def, delimiter=',', dtype=str)
