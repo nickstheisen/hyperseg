@@ -9,21 +9,27 @@ import torch
 
 if __name__ == '__main__':
     manual_seed=42
+    seed_everything(manual_seed, workers=True)
+
+    # Parameters
+    ## Data
     n_classes = 10 # 11 - 1 because class 0 is undefined
     n_channels = 25
     ignore_index = 10
+
+    ## Training + Evaluation
+    train_proportion = 0.5
+    val_proportion = 0.2
     batch_size = 32
     num_workers = 4
-    half_precision=True
+    half_precision=False
     if half_precision:
         precision=16
     else:
         precision=32
     log_dir = "~/data/results/hyko2NirSem"
-
-    seed_everything(manual_seed, workers=True)
-
     resume_path = None
+
 
     hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Semantic')
     data_module = HyKo2(
@@ -31,8 +37,8 @@ if __name__ == '__main__':
             num_workers=num_workers,
             batch_size=batch_size,
             label_set='semantic',
-            train_prop=0.5,
-            val_prop=0.1,
+            train_prop=train_proportion,
+            val_prop=val_proportion,
             n_classes=n_classes,
             manual_seed=manual_seed)
 
