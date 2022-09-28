@@ -1,7 +1,7 @@
 from hsdatasets.groundbased.prep import download_dataset
 from hsdatasets.groundbased.groundbased import HyKo2
 from hsdatasets.callbacks import ExportSplitCallback
-from hyperseg.models.imagebased import UNet
+from hyperseg.models.imagebased import EffUNet
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # Parameters
     ## Data
     n_classes = 10 # 11 - 1 because class 0 is undefined
-    n_channels = 25
+    n_channels = 15
     ignore_index = 10
 
     ## Training + Evaluation
@@ -28,11 +28,11 @@ if __name__ == '__main__':
         precision=16
     else:
         precision=32
-    log_dir = "~/data/results/hyko2NirSem"
+    log_dir = "~/data/results/hyko2VisSem"
     resume_path = None
 
 
-    hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Semantic')
+    hyko2vissem_filepath = download_dataset('~/data','HyKo2-VIS_Semantic')
     data_module = HyKo2(
             filepath=hyko2vissem_filepath, 
             num_workers=num_workers,
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             n_classes=n_classes,
             manual_seed=manual_seed)
 
-    model = UNet(
+    model = EffUNet(
             n_channels=n_channels,
             n_classes=n_classes,
             label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
             momentum=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
-            bilinear=True,
+            #bilinear=True,
             class_weighting=None)
 
     checkpoint_callback = ModelCheckpoint(

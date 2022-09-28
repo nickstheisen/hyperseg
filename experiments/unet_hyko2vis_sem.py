@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # Parameters
     ## Data
     n_classes = 10 # 11 - 1 because class 0 is undefined
-    n_channels = 25
+    n_channels = 15
     ignore_index = 10
 
     ## Training + Evaluation
@@ -28,11 +28,11 @@ if __name__ == '__main__':
         precision=16
     else:
         precision=32
-    log_dir = "~/data/results/hyko2NirSem"
+    log_dir = "~/data/results/hyko2VisSem"
     resume_path = None
 
 
-    hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Semantic')
+    hyko2vissem_filepath = download_dataset('~/data','HyKo2-VIS_Semantic')
     data_module = HyKo2(
             filepath=hyko2vissem_filepath, 
             num_workers=num_workers,

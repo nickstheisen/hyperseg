@@ -1,7 +1,7 @@
 from hsdatasets.groundbased.prep import download_dataset
 from hsdatasets.groundbased.groundbased import HyKo2
 from hsdatasets.callbacks import ExportSplitCallback
-from hyperseg.models.imagebased import UNet
+from hyperseg.models.imagebased import EffUNet
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             n_classes=n_classes,
             manual_seed=manual_seed)
 
-    model = UNet(
+    model = EffUNet(
             n_channels=n_channels,
             n_classes=n_classes,
             label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
             momentum=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
-            bilinear=True,
+            #bilinear=True,
             class_weighting=None)
 
     checkpoint_callback = ModelCheckpoint(

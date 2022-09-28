@@ -14,9 +14,9 @@ if __name__ == '__main__':
 
     # Parameters
     ## Data
-    n_classes = 10 # 11 - 1 because class 0 is undefined
-    n_channels = 25
-    ignore_index = 10
+    n_classes = 8 # 9 - 1 because class 0 is undefined
+    n_channels = 15
+    ignore_index = 8
 
     ## Training + Evaluation
     train_proportion = 0.5
@@ -28,16 +28,16 @@ if __name__ == '__main__':
         precision=16
     else:
         precision=32
-    log_dir = "~/data/results/hyko2NirSem"
+    log_dir = "~/data/results/hyko2VisMat"
     resume_path = None
 
 
-    hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Semantic')
+    hyko2vissem_filepath = download_dataset('~/data','HyKo2-VIS_Material')
     data_module = HyKo2(
             filepath=hyko2vissem_filepath, 
             num_workers=num_workers,
             batch_size=batch_size,
-            label_set='semantic',
+            label_set='material',
             train_prop=train_proportion,
             val_prop=val_proportion,
             n_classes=n_classes,
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     model = UNet(
             n_channels=n_channels,
             n_classes=n_classes,
-            label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
+            label_def='/home/hyperseg/data/hyko2_material_labels.txt', 
             loss_name='cross_entropy',
             learning_rate=0.001,
             optimizer_name='Adam',

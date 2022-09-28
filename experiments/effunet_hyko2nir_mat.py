@@ -1,7 +1,7 @@
 from hsdatasets.groundbased.prep import download_dataset
 from hsdatasets.groundbased.groundbased import HyKo2
 from hsdatasets.callbacks import ExportSplitCallback
-from hyperseg.models.imagebased import UNet
+from hyperseg.models.imagebased import EffUNet
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -14,9 +14,9 @@ if __name__ == '__main__':
 
     # Parameters
     ## Data
-    n_classes = 10 # 11 - 1 because class 0 is undefined
+    n_classes = 8 # 11 - 1 because class 0 is undefined
     n_channels = 25
-    ignore_index = 10
+    ignore_index = 8
 
     ## Training + Evaluation
     train_proportion = 0.5
@@ -28,32 +28,32 @@ if __name__ == '__main__':
         precision=16
     else:
         precision=32
-    log_dir = "~/data/results/hyko2NirSem"
+    log_dir = "~/data/results/hyko2NirMat"
     resume_path = None
 
 
-    hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Semantic')
+    hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Material')
     data_module = HyKo2(
             filepath=hyko2vissem_filepath, 
             num_workers=num_workers,
             batch_size=batch_size,
-            label_set='semantic',
+            label_set='material',
             train_prop=train_proportion,
             val_prop=val_proportion,
             n_classes=n_classes,
             manual_seed=manual_seed)
 
-    model = UNet(
+    model = EffUNet(
             n_channels=n_channels,
             n_classes=n_classes,
-            label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
+            label_def='/home/hyperseg/data/hyko2_material_labels.txt', 
             loss_name='cross_entropy',
             learning_rate=0.001,
             optimizer_name='Adam',
             momentum=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
-            bilinear=True,
+            #bilinear=True,
             class_weighting=None)
 
     checkpoint_callback = ModelCheckpoint(
