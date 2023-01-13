@@ -27,7 +27,7 @@ if __name__ == '__main__':
     ## Training + Evaluation
     train_proportion = 0.5
     val_proportion = 0.1
-    batch_size = 4
+    batch_size = 2
     num_workers = 4
     half_precision=True
     if half_precision:
@@ -53,12 +53,13 @@ if __name__ == '__main__':
             n_classes=n_classes,
             label_def='/home/hyperseg/data/HCv2_labels.txt', 
             loss_name='cross_entropy',
-            learning_rate=0.01,
+            learning_rate=0.001,
             optimizer_name='Adam',
             momentum=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             #bilinear=True,
+            pretrained=False,
             class_weighting=None)
 
     checkpoint_callback = ModelCheckpoint(

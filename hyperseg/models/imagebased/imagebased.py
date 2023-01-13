@@ -106,10 +106,12 @@ class SemanticSegmentationModule(pl.LightningModule):
                 average='none')
         self.train_metrics["Train/f1-class"] = self.f1_train_class
         self.jaccard_train = torchmetrics.JaccardIndex(
+                task='multiclass',
                 ignore_index=self.ignore_index, 
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.train_metrics["Train/jaccard"] = self.jaccard_train
         self.jaccard_train_class = torchmetrics.JaccardIndex(
+                task='multiclass',
                 average='none',
                 ignore_index=self.ignore_index,
                 num_classes=self.n_classes+1) # number of labels + undefined
@@ -157,10 +159,12 @@ class SemanticSegmentationModule(pl.LightningModule):
                 average='none')
         self.val_metrics["Validation/f1-class"] = self.f1_val_class
         self.jaccard_val = torchmetrics.JaccardIndex(
+                task='multiclass',
                 ignore_index=self.ignore_index, 
                 num_classes=self.n_classes+1) # number of labels + undefined
         self.val_metrics["Validation/jaccard"] = self.jaccard_val
         self.jaccard_val_class = torchmetrics.JaccardIndex(
+                task='multiclass',
                 average='none',
                 ignore_index=self.ignore_index,
                 num_classes=self.n_classes+1) # number of labels + undefined

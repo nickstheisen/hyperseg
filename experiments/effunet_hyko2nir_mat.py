@@ -53,6 +53,7 @@ if __name__ == '__main__':
             momentum=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
+            pretrained=False,
             #bilinear=True,
             class_weighting=None)
 

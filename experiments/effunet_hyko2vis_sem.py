@@ -46,6 +46,7 @@ if __name__ == '__main__':
     model = EffUNet(
             n_channels=n_channels,
             n_classes=n_classes,
+            pretrained=False,
             label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
             loss_name='cross_entropy',
             learning_rate=0.001,
