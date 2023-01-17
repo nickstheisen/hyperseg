@@ -21,8 +21,8 @@ if __name__ == '__main__':
     ## Training + Evaluation
     train_proportion = 0.5
     val_proportion = 0.2
-    batch_size = 32
-    num_workers = 4
+    batch_size = 16
+    num_workers = 0
     half_precision=False
     if half_precision:
         precision=16
@@ -48,9 +48,10 @@ if __name__ == '__main__':
             n_classes=n_classes,
             label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
             loss_name='cross_entropy',
-            learning_rate=0.001,
-            optimizer_name='Adam',
+            learning_rate=0.01,
+            optimizer_name='SGD',
             momentum=0.0,
+            weight_decay=0.1,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
@@ -69,7 +70,7 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback, export_split_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=600,
+            max_epochs=1000,
             auto_lr_find=True,
             precision=precision,
             )

@@ -15,24 +15,24 @@ if __name__ == '__main__':
     # Parameters
     ## Data
     n_classes = 10 # 11 - 1 because class 0 is undefined
-    n_channels = 25
+    n_channels = 15
     ignore_index = 10
 
     ## Training + Evaluation
     train_proportion = 0.5
     val_proportion = 0.2
-    batch_size = 32
-    num_workers = 4
+    batch_size = 16
+    num_workers = 0
     half_precision=False
     if half_precision:
         precision=16
     else:
         precision=32
-    log_dir = "~/data/RBMT_results/hyko2NirSem"
+    log_dir = "~/data/RBMT_results/hyko2VisSem"
     resume_path = None
 
 
-    hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Semantic')
+    hyko2vissem_filepath = download_dataset('~/data','HyKo2-VIS_Semantic')
     data_module = HyKo2(
             filepath=hyko2vissem_filepath, 
             num_workers=num_workers,
@@ -48,10 +48,10 @@ if __name__ == '__main__':
             n_classes=n_classes,
             label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
             loss_name='cross_entropy',
-            #learning_rate=0.001,
-            learning_rate=0.001,
-            optimizer_name='Adam',
+            learning_rate=0.01,
+            optimizer_name='SGD',
             momentum=0.0,
+            weight_decay=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
@@ -70,7 +70,7 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback, export_split_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=600,
+            max_epochs=1000,
             auto_lr_find=True,
             precision=precision,
             )

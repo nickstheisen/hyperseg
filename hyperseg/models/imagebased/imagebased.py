@@ -32,6 +32,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             learning_rate: float,
             optimizer_name: str,
             momentum: float,
+            weight_decay: float,
             ignore_index: int,
             mdmc_average: str,
             class_weighting: str = None,
@@ -47,6 +48,7 @@ class SemanticSegmentationModule(pl.LightningModule):
         # optimizer
         self.learning_rate = learning_rate
         self.momentum = momentum
+        self.weight_decay = weight_decay
         self.optimizer_name = optimizer_name
 
         # loss
@@ -259,14 +261,17 @@ class SemanticSegmentationModule(pl.LightningModule):
         if self.optimizer_name == 'SGD':
             optimizer = torch.optim.SGD(self.parameters(), 
                     lr=self.learning_rate, 
-                    momentum=self.momentum)
+                    momentum=self.momentum,
+                    weight_decay=self.weight_decay)
         elif self.optimizer_name == 'RMSprop':
             optimizer = torch.optim.RMSprop(self.parameters(),
                     lr=self.learning_rate,
-                    momentum=self.momentum)
+                    momentum=self.momentum,
+                    weight_decay=self.weight_decay)
         elif self.optimizer_name == 'Adam':
             optimizer = torch.optim.Adam(self.parameters(),
-                    lr=self.learning_rate)
+                    lr=self.learning_rate,
+                    weight_decay=self.weight_decay)
         else :
             raise RuntimeError(f'Optimizer {self.optimizer_name} unknown!')
 
