@@ -56,6 +56,7 @@ if __name__ == '__main__':
             learning_rate=0.01,
             optimizer_name='SGD',
             momentum=0.0,
+            weight_decay=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
