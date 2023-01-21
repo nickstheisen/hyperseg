@@ -300,6 +300,11 @@ class SemanticSegmentationModule(pl.LightningModule):
             optimizer = torch.optim.Adam(self.parameters(),
                     lr=self.learning_rate,
                     weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'AdamW':
+            # TODO add variable to adjust epsilon for AdamW
+            optimizer = torch.optim.AdamW(self.parameters(),
+                    lr=self.learning_rate,
+                    weight_decay=self.weight_decay)
         else :
             raise RuntimeError(f'Optimizer {self.optimizer_name} unknown!')
 
