@@ -28,7 +28,7 @@ if __name__ == '__main__':
         precision=16
     else:
         precision=32
-    log_dir = "~/data/RBMT_results/hyko2NirSem"
+    log_dir = "/mnt/data/RBMT_results/hyko2NirSem"
     resume_path = None
 
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback, export_split_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=1000,
+            max_epochs=500,
             auto_lr_find=True,
             precision=precision,
             )

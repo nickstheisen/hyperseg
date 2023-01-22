@@ -1,5 +1,5 @@
-from hsdatasets.groundbased.prep import download_dataset, apply_pca
-from hsdatasets.groundbased.groundbased import HyperspectralCityV2
+from hsdatasets.groundbased.prep import download_dataset
+from hsdatasets.groundbased.groundbased import HyKo2
 from hsdatasets.callbacks import ExportSplitCallback
 from hyperseg.models.imagebased import UNet
 from torch.utils.data import DataLoader
@@ -14,62 +14,59 @@ if __name__ == '__main__':
 
     # Parameters
     ## Data
-    n_classes = 19 # 20 - 1 because class 255/19 is undefined
-    n_channels = 10 # apply DR to reduce from 128 to X
-    ignore_index = 19
-    dataset_filepath = '/home/hyperseg/data/HyperspectralCityV2.h5'
-    pca_out_filepath = f'/mnt/data/HyperspectralCityV2_PCA{n_channels}.h5'
-
-    ### reduce dimensionality of dataset
-    apply_pca(n_channels, dataset_filepath, pca_out_filepath)
-    dataset_filepath = pca_out_filepath
+    n_classes = 10 # 11 - 1 because class 0 is undefined
+    n_channels = 15
+    ignore_index = 10
+    precalc_histograms = "False"
 
     ## Training + Evaluation
     train_proportion = 0.5
-    val_proportion = 0.1
-    batch_size = 4
-    num_workers = 14
-    half_precision=True
+    val_proportion = 0.2
+    batch_size = 16
+    num_workers = 8
+    half_precision=False
     if half_precision:
         precision=16
     else:
-        precision=32    
-    log_dir = "~/data/RBMT_results/HCV2"
+        precision=32
+    log_dir = "/mnt/data/RBMT_results/hyko2VisSem"
     resume_path = None
-    #resume_path = '/home/hyperseg/data/RBMT_results/HCV2/lightning_logs/version_18/checkpoints/checkpoint-UNet-epoch=315-val_iou_epoch=0.00.ckpt'
 
-    data_module = HyperspectralCityV2(
-            half_precision=half_precision,
-            filepath=dataset_filepath, 
+
+
+    hyko2vissem_filepath = download_dataset('~/data','HyKo2-VIS_Semantic')
+    data_module = HyKo2(
+            filepath=hyko2vissem_filepath, 
             num_workers=num_workers,
             batch_size=batch_size,
+            label_set='semantic',
             train_prop=train_proportion,
             val_prop=val_proportion,
             n_classes=n_classes,
-            manual_seed=manual_seed)
+            manual_seed=manual_seed,
+            precalc_histograms=precalc_histograms)
 
     model = UNet(
             n_channels=n_channels,
             n_classes=n_classes,
-            label_def='/home/hyperseg/data/HCv2_labels.txt', 
+            label_def='/home/hyperseg/data/hyko2_semantic_labels.txt', 
             loss_name='cross_entropy',
-            learning_rate=0.01,
-            optimizer_name='SGD',
+            learning_rate=0.001,
+            optimizer_name='AdamW',
             momentum=0.0,
-            weight_decay=0.0,
+            weight_decay=0.01,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
+            batch_norm=False,
             class_weighting=None)
-
-    #model = UNet.load_from_checkpoint(resume_path, strict = False)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",
             filename="checkpoint-UNet-{epoch:02d}-{val_iou_epoch:.2f}",
             save_top_k=3,
             mode='max'
-            )    
+            )
     export_split_callback = ExportSplitCallback()
 
     trainer = Trainer(
@@ -78,7 +75,7 @@ if __name__ == '__main__':
             accelerator='gpu',
             devices=[0], 
             max_epochs=500,
-            auto_lr_find=True,
+            auto_lr_find=False,
             precision=precision,
             )
     

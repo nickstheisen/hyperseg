@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # Parameters
     ## Data
     n_classes = 10 # 11 - 1 because class 0 is undefined
-    n_channels = 15
+    n_channels = 25
     ignore_index = 10
 
     ## Training + Evaluation
@@ -28,11 +28,11 @@ if __name__ == '__main__':
         precision=16
     else:
         precision=32
-    log_dir = "~/data/RBMT_results/hyko2VisSem"
+    log_dir = "/mnt/data/RBMT_results/hyko2NirSem"
     resume_path = None
 
 
-    hyko2vissem_filepath = download_dataset('~/data','HyKo2-VIS_Semantic')
+    hyko2vissem_filepath = download_dataset('~/data','HyKo2-NIR_Semantic')
     data_module = HyKo2(
             filepath=hyko2vissem_filepath, 
             num_workers=num_workers,
@@ -51,7 +51,7 @@ if __name__ == '__main__':
             learning_rate=0.01,
             optimizer_name='SGD',
             momentum=0.0,
-            weight_decay=0.1,
+            weight_decay=0.01,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
@@ -70,7 +70,7 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback, export_split_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=1000,
+            max_epochs=500,
             auto_lr_find=True,
             precision=precision,
             )
