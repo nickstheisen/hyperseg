@@ -35,6 +35,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             weight_decay: float,
             ignore_index: int,
             mdmc_average: str,
+            optimizer_eps: int = 1e-08,
             classification_task: str = "multiclass",
             class_weighting: str = None,
             **kwargs
@@ -51,6 +52,7 @@ class SemanticSegmentationModule(pl.LightningModule):
         self.momentum = momentum
         self.weight_decay = weight_decay
         self.optimizer_name = optimizer_name
+        self.optimizer_eps = optimizer_eps
 
         # loss
         self.ignore_index = ignore_index
@@ -295,19 +297,22 @@ class SemanticSegmentationModule(pl.LightningModule):
             optimizer = torch.optim.RMSprop(self.parameters(),
                     lr=self.learning_rate,
                     momentum=self.momentum,
-                    weight_decay=self.weight_decay)
+                    weight_decay=self.weight_decay,
+                    eps=self.optimizer_eps)
         elif self.optimizer_name == 'Adam':
             optimizer = torch.optim.Adam(self.parameters(),
                     lr=self.learning_rate,
-                    weight_decay=self.weight_decay)
+                    weight_decay=self.weight_decay,
+                    eps=self.optimizer_eps)
         elif self.optimizer_name == 'AdamW':
             # TODO add variable to adjust epsilon for AdamW
             optimizer = torch.optim.AdamW(self.parameters(),
                     lr=self.learning_rate,
-                    weight_decay=self.weight_decay)
+                    weight_decay=self.weight_decay,
+                    eps=self.optimizer_eps)
         else :
             raise RuntimeError(f'Optimizer {self.optimizer_name} unknown!')
-
+        print(optimizer)
         return optimizer
 
     def training_step(self, train_batch, batch_idx):
@@ -389,7 +394,7 @@ class SemanticSegmentationModule(pl.LightningModule):
                             self.current_epoch)
                 else:
                     self.log(name, metric.compute())
-                    metric.reset()
+                metric.reset()
 
     def validation_step(self, val_batch, batch_idx):
         inputs, labels = val_batch
@@ -451,7 +456,7 @@ class SemanticSegmentationModule(pl.LightningModule):
                             self.current_epoch)
                 else :
                     self.log(name, metric.compute())
-                    metric.reset()
+                metric.reset()
 
     def test_step(self, test_batch, batch_idx):
         inputs, labels = test_batch
@@ -501,10 +506,9 @@ class SemanticSegmentationModule(pl.LightningModule):
                     self.logger.experiment.add_figure(f"Test/{metric_name}",
                             self._plot_classmetric(score_epoch),
                             self.current_epoch)
-
                 else :
                     self.log(name, metric.compute())
-                    metric.reset()
+                metric.reset()
 
     def _export_confmat(self, path, confmat):
         np.savetxt(path, confmat)
