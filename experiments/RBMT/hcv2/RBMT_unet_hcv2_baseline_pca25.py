@@ -28,7 +28,7 @@ if __name__ == '__main__':
     train_proportion = 0.5
     val_proportion = 0.1
     batch_size = 4
-    num_workers = 8
+    num_workers = 14
     half_precision=True
     if half_precision:
         precision=16
@@ -37,7 +37,6 @@ if __name__ == '__main__':
 
     log_dir = "/mnt/data/RBMT_results/HCV2"
     resume_path = None
-    #resume_path = '/home/hyperseg/data/RBMT_results/HCV2/lightning_logs/version_20/checkpoints/checkpoint-UNet-epoch=04-val_iou_epoch=0.00.ckpt'
 
     data_module = HyperspectralCityV2(
             half_precision=half_precision,
@@ -56,14 +55,14 @@ if __name__ == '__main__':
             loss_name='cross_entropy',
             learning_rate=0.001,
             optimizer_name='AdamW',
+            optimizer_eps=1e-04,
             momentum=0.0,
             weight_decay=0.0,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
-            class_weighting=None)
-
-    #model = UNet.load_from_checkpoint(resume_path, strict = False)
+            class_weighting=None,
+            batch_norm=False)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",
@@ -78,10 +77,9 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback, export_split_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=250,
+            max_epochs=300,
             auto_lr_find=True,
             precision=precision,
-            profiler="simple"
             )
     
     # train model

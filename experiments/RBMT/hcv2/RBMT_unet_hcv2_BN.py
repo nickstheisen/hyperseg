@@ -62,7 +62,7 @@ if __name__ == '__main__':
             mdmc_average='samplewise',
             bilinear=True,
             class_weighting=None,
-            batch_norm=False)
+            batch_norm=True)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",
