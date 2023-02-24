@@ -32,8 +32,11 @@ class SemanticSegmentationModule(pl.LightningModule):
             learning_rate: float,
             optimizer_name: str,
             momentum: float,
+            weight_decay: float,
             ignore_index: int,
             mdmc_average: str,
+            optimizer_eps: int = 1e-08,
+            classification_task: str = "multiclass",
             class_weighting: str = None,
             **kwargs
     ):
@@ -47,7 +50,9 @@ class SemanticSegmentationModule(pl.LightningModule):
         # optimizer
         self.learning_rate = learning_rate
         self.momentum = momentum
+        self.weight_decay = weight_decay
         self.optimizer_name = optimizer_name
+        self.optimizer_eps = optimizer_eps
 
         # loss
         self.ignore_index = ignore_index
@@ -60,6 +65,7 @@ class SemanticSegmentationModule(pl.LightningModule):
         # metrics
         self.export_metrics = True
         self.mdmc_average = mdmc_average
+        self.classification_task = classification_task
         
 
         ## Attention! Unfortunately, metrics must be created as members instead of directly storing
@@ -70,158 +76,184 @@ class SemanticSegmentationModule(pl.LightningModule):
         ## train metrics
         self.train_metrics = {}
         self.acc_train_micro = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1, 
+                task=self.classification_task,
+                num_classes=self.n_classes, 
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='micro')
         self.train_metrics["Train/accuracy-micro"] = self.acc_train_micro
         self.acc_train_macro = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1,
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/accuracy-macro"] = self.acc_train_macro
         self.acc_train_class = torchmetrics.Accuracy(
-                 num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.train_metrics["Train/accuracy-class"] = self.acc_train_class
         self.f1_train_micro = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='micro')
         self.train_metrics["Train/f1-micro"] = self.f1_train_micro
         self.f1_train_macro = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/f1-macro"] = self.f1_train_macro
         self.f1_train_class = torchmetrics.F1Score(
-                 num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.train_metrics["Train/f1-class"] = self.f1_train_class
         self.jaccard_train = torchmetrics.JaccardIndex(
-                task='multiclass',
+                task=self.classification_task,
                 ignore_index=self.ignore_index, 
-                num_classes=self.n_classes+1) # number of labels + undefined
+                num_classes=self.n_classes)
         self.train_metrics["Train/jaccard"] = self.jaccard_train
         self.jaccard_train_class = torchmetrics.JaccardIndex(
-                task='multiclass',
+                task=self.classification_task,
                 average='none',
                 ignore_index=self.ignore_index,
-                num_classes=self.n_classes+1) # number of labels + undefined
+                num_classes=self.n_classes)
         self.train_metrics["Train/jaccard-class"] = self.jaccard_train_class
         self.confmat_train = torchmetrics.ConfusionMatrix(
-                num_classes=self.n_classes+1) # number of labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
+                ignore_index=self.ignore_index)
         self.train_metrics["Train/conf_mat"] = self.confmat_train
 
         ## val metrics
         self.val_metrics = {}
         self.acc_val_micro = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1,
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='micro')
         self.val_metrics["Validation/accuracy-micro"] = self.acc_val_micro
         self.acc_val_macro = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1,
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/accuracy-macro"] = self.acc_val_macro
         self.acc_val_class = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.val_metrics["Validation/accuracy-class"] = self.acc_val_class
         self.f1_val_micro = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='micro')
         self.val_metrics["Validation/f1-micro"] = self.f1_val_micro
         self.f1_val_macro = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/f1-macro"] = self.f1_val_macro
         self.f1_val_class = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.val_metrics["Validation/f1-class"] = self.f1_val_class
         self.jaccard_val = torchmetrics.JaccardIndex(
-                task='multiclass',
+                task=self.classification_task,
                 ignore_index=self.ignore_index, 
-                num_classes=self.n_classes+1) # number of labels + undefined
+                num_classes=self.n_classes)
         self.val_metrics["Validation/jaccard"] = self.jaccard_val
         self.jaccard_val_class = torchmetrics.JaccardIndex(
-                task='multiclass',
+                task=self.classification_task,
                 average='none',
                 ignore_index=self.ignore_index,
-                num_classes=self.n_classes+1) # number of labels + undefined
+                num_classes=self.n_classes)
         self.val_metrics["Validation/jaccard-class"] = self.jaccard_val_class
         self.confmat_val = torchmetrics.ConfusionMatrix(
-                num_classes=self.n_classes+1) # number of labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
+                ignore_index=self.ignore_index)
         self.val_metrics["Validation/conf_mat"] = self.confmat_val
 
         ## test metrics
         self.test_metrics = {}
         self.acc_test_micro = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1,
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='micro')
         self.test_metrics["Test/accuracy-micro"] = self.acc_test_micro
         self.acc_test_macro = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1,
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/accuracy-macro"] = self.acc_test_macro
         self.acc_test_class = torchmetrics.Accuracy(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.test_metrics["Test/accuracy-class"] = self.acc_test_class
         self.f1_test_micro = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='micro')
         self.test_metrics["Test/f1-micro"] = self.f1_test_micro
         self.f1_test_macro = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/f1-macro"] = self.f1_test_macro
         self.f1_test_class = torchmetrics.F1Score(
-                num_classes=self.n_classes+1, # labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.test_metrics["Test/f1-class"] = self.f1_test_class
         self.jaccard_test = torchmetrics.JaccardIndex(
+                task=self.classification_task,
                 ignore_index=self.ignore_index, 
-                num_classes=self.n_classes+1) # number of labels + undefined
+                num_classes=self.n_classes)
         self.test_metrics["Test/jaccard"] = self.jaccard_test
         self.jaccard_test_class = torchmetrics.JaccardIndex(
+                task=self.classification_task,
                 average='none',
                 ignore_index=self.ignore_index,
-                num_classes=self.n_classes+1) # number of labels + undefined
+                num_classes=self.n_classes)
         self.test_metrics["Test/jaccard-class"] = self.jaccard_test_class
         self.confmat_test = torchmetrics.ConfusionMatrix(
-                num_classes=self.n_classes+1) # number of labels + undefined
+                task=self.classification_task,
+                num_classes=self.n_classes,
+                ignore_index=self.ignore_index)
         self.test_metrics["Test/conf_mat"] = self.confmat_test
 
     def setup(self, stage: Optional[str]=None):
@@ -259,17 +291,28 @@ class SemanticSegmentationModule(pl.LightningModule):
         if self.optimizer_name == 'SGD':
             optimizer = torch.optim.SGD(self.parameters(), 
                     lr=self.learning_rate, 
-                    momentum=self.momentum)
+                    momentum=self.momentum,
+                    weight_decay=self.weight_decay)
         elif self.optimizer_name == 'RMSprop':
             optimizer = torch.optim.RMSprop(self.parameters(),
                     lr=self.learning_rate,
-                    momentum=self.momentum)
+                    momentum=self.momentum,
+                    weight_decay=self.weight_decay,
+                    eps=self.optimizer_eps)
         elif self.optimizer_name == 'Adam':
             optimizer = torch.optim.Adam(self.parameters(),
-                    lr=self.learning_rate)
+                    lr=self.learning_rate,
+                    weight_decay=self.weight_decay,
+                    eps=self.optimizer_eps)
+        elif self.optimizer_name == 'AdamW':
+            # TODO add variable to adjust epsilon for AdamW
+            optimizer = torch.optim.AdamW(self.parameters(),
+                    lr=self.learning_rate,
+                    weight_decay=self.weight_decay,
+                    eps=self.optimizer_eps)
         else :
             raise RuntimeError(f'Optimizer {self.optimizer_name} unknown!')
-
+        print(optimizer)
         return optimizer
 
     def training_step(self, train_batch, batch_idx):
@@ -312,8 +355,7 @@ class SemanticSegmentationModule(pl.LightningModule):
         if self.export_metrics:
             prediction = prediction.argmax(dim=1, keepdims=True)
             labels = labels.unsqueeze(1)
-
-            for _, metric in self.train_metrics.items():
+            for name, metric in self.train_metrics.items():
                 metric(prediction, labels)
 
         self.log('train_loss_step', loss)
@@ -352,6 +394,7 @@ class SemanticSegmentationModule(pl.LightningModule):
                             self.current_epoch)
                 else:
                     self.log(name, metric.compute())
+                metric.reset()
 
     def validation_step(self, val_batch, batch_idx):
         inputs, labels = val_batch
@@ -360,6 +403,8 @@ class SemanticSegmentationModule(pl.LightningModule):
         # convert prediction to same shape as ground-truth labels
         # (? pretty sure this is what happens, but I should have
         #  added a comment in the first place)
+        # TODO (RB) this doesn't seem to do anything, prediction.shape is the same before
+        # and after
         prediction =  T.Resize((labels.shape[1:3]))(prediction)
         loss = self.criterion(prediction, labels.squeeze(dim=1))
 
@@ -367,7 +412,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             prediction = prediction.argmax(dim=1, keepdims=True)
             labels = labels.unsqueeze(1)
             
-            for _, metric in self.val_metrics.items():
+            for name, metric in self.val_metrics.items():
                 metric(prediction, labels)
             
             # Visualize prediction of first batch in each epoch
@@ -409,9 +454,9 @@ class SemanticSegmentationModule(pl.LightningModule):
                     self.logger.experiment.add_figure(f"Validation/{metric_name}",
                             self._plot_classmetric(score_epoch),
                             self.current_epoch)
-
                 else :
                     self.log(name, metric.compute())
+                metric.reset()
 
     def test_step(self, test_batch, batch_idx):
         inputs, labels = test_batch
@@ -433,7 +478,7 @@ class SemanticSegmentationModule(pl.LightningModule):
     def test_epoch_end(self, outs):
         if self.export_metrics:
             for name, metric in self.test_metrics.items():
-                if "conf_mat" in name :
+                if "conf_mat" in name:
                     confmat_epoch = metric.compute()
 
                     # plot confusion_matrix
@@ -461,9 +506,9 @@ class SemanticSegmentationModule(pl.LightningModule):
                     self.logger.experiment.add_figure(f"Test/{metric_name}",
                             self._plot_classmetric(score_epoch),
                             self.current_epoch)
-
                 else :
                     self.log(name, metric.compute())
+                metric.reset()
 
     def _export_confmat(self, path, confmat):
         np.savetxt(path, confmat)
