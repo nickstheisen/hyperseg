@@ -1,7 +1,7 @@
 from hsdatasets.groundbased.prep import download_dataset
 from hsdatasets.groundbased.groundbased import HSIRoad
 from hsdatasets.callbacks import ExportSplitCallback
-from hyperseg.models.imagebased import UNet
+from hyperseg.models.imagebased import UNetAug
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -27,14 +27,16 @@ if __name__ == '__main__':
         precision=32
     log_dir = "/mnt/data/RBMT_results/hsiroad"
     resume_path = None
+    precalc_histograms=True
 
     data_module = HSIRoad(
             basepath="/home/hyperseg/data/hsi_road/hsi_road",
             sensortype="nir",
             batch_size=batch_size,
-            num_workers=num_workers)
+            num_workers=num_workers,
+            precalc_histograms=True)
 
-    model = UNet(
+    model = UNetAug(
             n_channels=n_channels,
             n_classes=n_classes,
             label_def="/home/hyperseg/data/hsi_road/hsi_road/hsi_road_label_def.txt",
@@ -46,8 +48,10 @@ if __name__ == '__main__':
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
-            class_weighting=None,
-            batch_norm=True)
+            class_weighting="ISNS",
+            batch_norm=True,
+            augmentation=True,
+            dropout=0.5)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",

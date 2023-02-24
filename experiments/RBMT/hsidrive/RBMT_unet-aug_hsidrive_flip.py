@@ -1,12 +1,13 @@
 from hsdatasets.groundbased.prep import download_dataset
-from hsdatasets.groundbased.groundbased import HSIRoad
+from hsdatasets.groundbased.hsidrive import HSIDrive
 from hsdatasets.callbacks import ExportSplitCallback
-from hyperseg.models.imagebased import UNet
+from hyperseg.models.imagebased import UNetAug
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch import nn
 import torch
+import torchinfo
 
 if __name__ == '__main__':
     manual_seed=42
@@ -14,30 +15,40 @@ if __name__ == '__main__':
 
     # Parameters
     ## Data
-    n_classes = 2
+    n_classes = 10 
     n_channels = 25
-    ignore_index = -100
+    ignore_index = 10
 
+    height = 216 
+    width = 409
+
+
+    train_proportion = 0.6
+    val_proportion = 0.2
     batch_size = 32
-    num_workers = 8
+    num_workers = 4
     half_precision=False
     if half_precision:
         precision=16
     else:
         precision=32
-    log_dir = "/mnt/data/RBMT_results/hsiroad"
+    log_dir = "/mnt/data/RBMT_results/hsidrive"
     resume_path = None
 
-    data_module = HSIRoad(
-            basepath="/home/hyperseg/data/hsi_road/hsi_road",
-            sensortype="nir",
-            batch_size=batch_size,
-            num_workers=num_workers)
 
-    model = UNet(
+    data_module = HSIDrive(
+            basepath = "/mnt/data/data/hsi-drive/Image_dataset",
+            train_prop=train_proportion,
+            val_prop=val_proportion,
+            batch_size=batch_size, 
+            num_workers=num_workers)
+    data_module.setup()
+
+
+    model = UNetAug(
             n_channels=n_channels,
             n_classes=n_classes,
-            label_def="/home/hyperseg/data/hsi_road/hsi_road/hsi_road_label_def.txt",
+            label_def="/home/hyperseg/git/hsdatasets/labeldefs/hsidrive-labels.txt",
             loss_name='cross_entropy',
             learning_rate=0.001,
             optimizer_name='AdamW',
@@ -47,7 +58,11 @@ if __name__ == '__main__':
             mdmc_average='samplewise',
             bilinear=True,
             class_weighting=None,
-            batch_norm=True)
+            batch_norm=False,
+            augmentation=True)
+            
+
+    #torchinfo.summary(model, input_size=(batch_size, n_channels, 409, 216))
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",
@@ -61,7 +76,7 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=100,
+            max_epochs=200,
             auto_lr_find=True,
             precision=precision,)
     

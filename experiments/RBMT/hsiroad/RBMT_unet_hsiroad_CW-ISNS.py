@@ -28,11 +28,14 @@ if __name__ == '__main__':
     log_dir = "/mnt/data/RBMT_results/hsiroad"
     resume_path = None
 
+    precalc_histograms=True
+
     data_module = HSIRoad(
             basepath="/home/hyperseg/data/hsi_road/hsi_road",
             sensortype="nir",
             batch_size=batch_size,
-            num_workers=num_workers)
+            num_workers=num_workers,
+            precalc_histograms=precalc_histograms)
 
     model = UNet(
             n_channels=n_channels,
@@ -61,7 +64,7 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=300,
+            max_epochs=100,
             auto_lr_find=True,
             precision=precision,)
     

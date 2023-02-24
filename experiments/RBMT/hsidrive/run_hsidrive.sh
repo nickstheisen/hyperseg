@@ -1,0 +1,21 @@
+#! /bin/sh
+
+python RBMT_unet_hsidrive_BN.py;
+sleep 3;
+python RBMT_unet_hsidrive_WD-0_01.py;
+sleep 3;
+python RBMT_unet_hsidrive_WD-0_05.py;
+sleep 3;
+python RBMT_unet_hsidrive_WD-0_1.py;
+sleep 3;
+python RBMT_unet_hsidrive_WD-0_3.py;
+sleep 3;
+python RBMT_unet_hsidrive_WD-0_5.py;
+sleep 3;
+python RBMT_unet_hsidrive_DO-0_25.py;
+sleep 3;
+python RBMT_unet_hsidrive_DO-0_5.py;
+sleep 3;
+python RBMT_unet_hsidrive_CW-INS.py;
+sleep 3;
+python RBMT_unet_hsidrive_CW-ISNS.py;

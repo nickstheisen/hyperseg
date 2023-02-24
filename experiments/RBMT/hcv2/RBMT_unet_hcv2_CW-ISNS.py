@@ -8,8 +8,6 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from torch import nn
 import torch
 
-import torchinfo
-
 if __name__ == '__main__':
     manual_seed=42
     seed_everything(manual_seed, workers=True)
@@ -17,7 +15,7 @@ if __name__ == '__main__':
     # Parameters
     ## Data
     n_classes = 19 # 20 - 1 because class 255/19 is undefined
-    n_channels = 25 # apply DR to reduce from 128 to X
+    n_channels = 1 # apply DR to reduce from 128 to X
     ignore_index = 19
     dataset_filepath = '/home/hyperseg/data/HyperspectralCityV2.h5'
     pca_out_filepath = f'/mnt/data/HyperspectralCityV2_PCA{n_channels}.h5'
@@ -25,6 +23,9 @@ if __name__ == '__main__':
     ### reduce dimensionality of dataset
     apply_pca(n_channels, dataset_filepath, pca_out_filepath)
     dataset_filepath = pca_out_filepath
+
+
+    precalc_histograms = True
 
     ## Training + Evaluation
     train_proportion = 0.5
@@ -48,7 +49,8 @@ if __name__ == '__main__':
             train_prop=train_proportion,
             val_prop=val_proportion,
             n_classes=n_classes,
-            manual_seed=manual_seed)
+            manual_seed=manual_seed,
+            precalc_histograms=precalc_histograms)
 
     model = UNet(
             n_channels=n_channels,
@@ -63,10 +65,8 @@ if __name__ == '__main__':
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
-            class_weighting=None,
+            class_weighting="ISNS",
             batch_norm=False)
-    
-    torchinfo.summary(model, input_size=(batch_size, n_channels, 1800, 1800))
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",

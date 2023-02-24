@@ -1,7 +1,7 @@
 from hsdatasets.groundbased.prep import download_dataset
 from hsdatasets.groundbased.groundbased import HSIRoad
 from hsdatasets.callbacks import ExportSplitCallback
-from hyperseg.models.imagebased import UNet
+from hyperseg.models.imagebased import UNetDropout
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -34,7 +34,7 @@ if __name__ == '__main__':
             batch_size=batch_size,
             num_workers=num_workers)
 
-    model = UNet(
+    model = UNetDropout(
             n_channels=n_channels,
             n_classes=n_classes,
             label_def="/home/hyperseg/data/hsi_road/hsi_road/hsi_road_label_def.txt",
@@ -47,7 +47,8 @@ if __name__ == '__main__':
             mdmc_average='samplewise',
             bilinear=True,
             class_weighting=None,
-            batch_norm=True)
+            batch_norm=False,
+            dropout=0.5)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",

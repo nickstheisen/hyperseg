@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # Parameters
     ## Data
     n_classes = 19 # 20 - 1 because class 255/19 is undefined
-    n_channels = 5 # apply DR to reduce from 128 to X
+    n_channels = 1 # apply DR to reduce from 128 to X
     ignore_index = 19
     dataset_filepath = '/home/hyperseg/data/HyperspectralCityV2.h5'
     pca_out_filepath = f'/mnt/data/HyperspectralCityV2_PCA{n_channels}.h5'
@@ -57,12 +57,12 @@ if __name__ == '__main__':
             optimizer_name='AdamW',
             optimizer_eps=1e-04,
             momentum=0.0,
-            weight_decay=0.0,
+            weight_decay=0.00000001,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
             class_weighting=None,
-            batch_norm=True)
+            batch_norm=False)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",

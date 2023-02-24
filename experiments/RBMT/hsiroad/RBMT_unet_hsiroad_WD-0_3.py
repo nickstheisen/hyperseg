@@ -42,12 +42,12 @@ if __name__ == '__main__':
             learning_rate=0.001,
             optimizer_name='AdamW',
             momentum=0.0,
-            weight_decay=0.0,
+            weight_decay=0.3,
             ignore_index=ignore_index,
             mdmc_average='samplewise',
             bilinear=True,
             class_weighting=None,
-            batch_norm=True)
+            batch_norm=False)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",

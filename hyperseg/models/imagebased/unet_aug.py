@@ -8,6 +8,7 @@ import torch.optim as optim
 from .imagebased import SemanticSegmentationModule
 
 import kornia as K
+from kornia.augmentation import AugmentationSequential
 
 def ceildiv(a, b):
     # usage of ceil division instead of floor div (//) to avoid 0 for 1 // 2
@@ -79,6 +80,22 @@ class ModLayer(nn.Module):
         x = sharpen(x)
         return x
 
+class AugmentationModule(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.augmentation = AugmentationSequential(
+                                K.augmentation.RandomHorizontalFlip(p=0.5),
+                                data_keys=["input","mask"])
+        
+    def forward(self, x, labels):
+        shape = x.shape
+        labels = torch.reshape(labels,(shape[0], 1, shape[2], shape[3]))
+        augmented = self.augmentation(x, labels.float())
+        #print(augmented[0].size())
+        #print(augmented[1].size())
+        
+        return augmented[0], augmented[1]
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -111,10 +128,11 @@ class DoubleConv(nn.Module):
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
-    def __init__(self, in_channels, out_channels, batch_norm=True):
+    def __init__(self, in_channels, out_channels, batch_norm=True, dropout=0.0):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
+            nn.Dropout(dropout),
             DoubleConv(in_channels, out_channels, batch_norm=batch_norm)
         )
 
@@ -159,20 +177,22 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class UNetMod(SemanticSegmentationModule):
+class UNetAug(SemanticSegmentationModule):
     def __init__(self, 
             #batch_size : int,
             #height : int,
             #width : int,
             bilinear : bool = True,
             batch_norm : bool = True,
+            dropout : float = 0.0,
             **kwargs):
-        super(UNetMod, self).__init__(**kwargs)
+        super(UNetAug, self).__init__(**kwargs)
 
         self.save_hyperparameters()
 
         self.bilinear = bilinear
         self.batch_norm = batch_norm
+        self.dropout = dropout
         # need to know N, H , W at init time for modlayer
         #self.H = height
         #self.W = width
@@ -182,6 +202,8 @@ class UNetMod(SemanticSegmentationModule):
         #self.mod = ModLayer(self.n_channels, ceildiv(self.n_channels,4), dropout2d=self.dropout2d)
         #self.inc = DoubleConv(ceildiv(self.n_channels,4), 64, batch_norm=self.batch_norm)
         self.mod = ModLayer()
+        if self.augmentation:
+            self.aug = AugmentationModule()
         self.inc = DoubleConv(self.n_channels, 64, batch_norm=self.batch_norm)
         self.down1 = Down(64, 128, batch_norm=self.batch_norm)
         self.down2 = Down(128, 256, batch_norm=self.batch_norm)
@@ -194,10 +216,13 @@ class UNetMod(SemanticSegmentationModule):
         self.up4 = Up(128, 64, bilinear, batch_norm=self.batch_norm)
         self.outc = OutConv(64, self.n_classes)
 
-    def forward(self, x):
-        x = self.mod(x)
+    def forward(self, x, labels=None, val_mode=False):
         # TODO inc below isnt taking previous as input!!!
         #x = torch.cat((x,m),1)
+        x = self.mod(x)
+        if not val_mode:
+            x, labels = self.aug(x, labels)
+
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
@@ -209,4 +234,7 @@ class UNetMod(SemanticSegmentationModule):
         x = self.up4(x, x1)
 
         logits = self.outc(x)
-        return logits
+        if self.augmentation:
+            return logits, labels
+        else:
+            return logits

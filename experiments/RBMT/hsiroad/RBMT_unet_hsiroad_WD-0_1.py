@@ -61,7 +61,7 @@ if __name__ == '__main__':
             callbacks=[checkpoint_callback],
             accelerator='gpu',
             devices=[0], 
-            max_epochs=300,
+            max_epochs=100,
             auto_lr_find=True,
             precision=precision,)
     

@@ -38,6 +38,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             optimizer_eps: int = 1e-08,
             classification_task: str = "multiclass",
             class_weighting: str = None,
+            augmentation: bool = False,
             **kwargs
     ):
         super(SemanticSegmentationModule, self).__init__(**kwargs)
@@ -66,6 +67,8 @@ class SemanticSegmentationModule(pl.LightningModule):
         self.export_metrics = True
         self.mdmc_average = mdmc_average
         self.classification_task = classification_task
+
+        self.augmentation = True
         
 
         ## Attention! Unfortunately, metrics must be created as members instead of directly storing
@@ -317,7 +320,14 @@ class SemanticSegmentationModule(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         inputs, labels = train_batch
-        prediction = self.forward(inputs)
+        #print(inputs.shape)
+        #print(labels.shape)
+        if self.augmentation:
+            prediction, labels = self.forward(inputs, labels)
+            labels = torch.reshape(labels, (labels.shape[0],labels.shape[2],labels.shape[3]))
+            labels = labels.long()
+        else:
+            prediction = self.forward(inputs)
         '''
         print("===== IMAGES ====")
         print(inputs.dtype)
@@ -398,7 +408,10 @@ class SemanticSegmentationModule(pl.LightningModule):
 
     def validation_step(self, val_batch, batch_idx):
         inputs, labels = val_batch
-        prediction = self.forward(inputs)
+        if self.augmentation:
+            prediction, _ = self.forward(inputs,val_mode=True)
+        else:
+            prediction = self.forward(inputs)
 
         # convert prediction to same shape as ground-truth labels
         # (? pretty sure this is what happens, but I should have

@@ -1,14 +1,12 @@
 from hsdatasets.groundbased.prep import download_dataset, apply_pca
 from hsdatasets.groundbased.groundbased import HyperspectralCityV2
 from hsdatasets.callbacks import ExportSplitCallback
-from hyperseg.models.imagebased import UNet
+from hyperseg.models.imagebased import UNet, UNetDropout
 from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch import nn
 import torch
-
-import torchinfo
 
 if __name__ == '__main__':
     manual_seed=42
@@ -17,7 +15,7 @@ if __name__ == '__main__':
     # Parameters
     ## Data
     n_classes = 19 # 20 - 1 because class 255/19 is undefined
-    n_channels = 25 # apply DR to reduce from 128 to X
+    n_channels = 1 # apply DR to reduce from 128 to X
     ignore_index = 19
     dataset_filepath = '/home/hyperseg/data/HyperspectralCityV2.h5'
     pca_out_filepath = f'/mnt/data/HyperspectralCityV2_PCA{n_channels}.h5'
@@ -50,7 +48,7 @@ if __name__ == '__main__':
             n_classes=n_classes,
             manual_seed=manual_seed)
 
-    model = UNet(
+    model = UNetDropout(
             n_channels=n_channels,
             n_classes=n_classes,
             label_def='/home/hyperseg/data/HCv2_labels.txt', 
@@ -64,9 +62,8 @@ if __name__ == '__main__':
             mdmc_average='samplewise',
             bilinear=True,
             class_weighting=None,
-            batch_norm=False)
-    
-    torchinfo.summary(model, input_size=(batch_size, n_channels, 1800, 1800))
+            batch_norm=True,
+            dropout=0.5)
 
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",
