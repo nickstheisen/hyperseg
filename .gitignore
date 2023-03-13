@@ -130,6 +130,7 @@ dmypy.json
 
 # Vim
 *.swp
+*.swo
 
 # pytorch lightning
 *lightning_logs
