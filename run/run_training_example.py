@@ -7,8 +7,10 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch import nn
 import torch
+import torchinfo
 
 if __name__ == '__main__':
+    # --------------------------------------
     #NOTE this can be set to medium | high, if tensor cores available for possible performance gain, default: highest
     torch.set_float32_matmul_precision('highest')
 
@@ -38,6 +40,11 @@ if __name__ == '__main__':
     else:
         precision=32
 
+    # input shape for printing model summary; use None if not required
+    input_shape = None
+    input_shape = (batch_size, n_channels, 512, 272) # only relevant for printed model summary
+    # --------------------------------------
+
     data_module = HyKo2(
             filepath=dataset_filepath, 
             num_workers=num_workers,
@@ -64,6 +71,9 @@ if __name__ == '__main__':
             batch_norm=False,
             class_weighting=None)
 
+    # print model summary
+    torchinfo.summary(model, input_size=input_shape)
+
     checkpoint_callback = ModelCheckpoint(
             monitor="Validation/jaccard",
             filename="checkpoint-UNet-{epoch:02d}-{val_iou_epoch:.2f}",
@@ -79,6 +89,7 @@ if __name__ == '__main__':
             devices=[0], 
             max_epochs=500,
             precision=precision,
+            enable_model_summary=False # enable for default model parameter printing at start
             )
     
     # train model

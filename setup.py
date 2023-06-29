@@ -24,6 +24,6 @@ setup(
         "imageio",
         "tifffile",
         "efficientnet_pytorch",
-        "torchsummary",
+        "torchinfo"
         ],
 )
