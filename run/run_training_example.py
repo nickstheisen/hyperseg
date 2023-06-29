@@ -9,7 +9,9 @@ from torch import nn
 import torch
 
 if __name__ == '__main__':
-    torch.set_float32_matmul_precision('highest') #NOTE this can be changed for possible performance gain
+    #NOTE this can be set to medium | high, if tensor cores available for possible performance gain, default: highest
+    torch.set_float32_matmul_precision('highest')
+
     # Seed
     manual_seed=42
     seed_everything(manual_seed, workers=True)
