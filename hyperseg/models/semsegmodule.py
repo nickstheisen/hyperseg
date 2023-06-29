@@ -38,6 +38,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             optimizer_eps: int = 1e-08,
             classification_task: str = "multiclass",
             class_weighting: str = None,
+            export_preds_every_n_epochs: int = None,
             **kwargs
     ):
         super(SemanticSegmentationModule, self).__init__(**kwargs)
@@ -286,6 +287,10 @@ class SemanticSegmentationModule(pl.LightningModule):
             # class-wise metrics
             self.classmetric_log_dir = Path(self.logger.log_dir).joinpath('class-metrics')
             self.classmetric_log_dir.mkdir(parents=True, exist_ok=True)
+            
+            # predictions
+            self.pred_export_log_dir = Path(self.logger.log_dir).joinpath('predictions')
+            self.pred_export_log_dir.mkdir(parents=True, exist_ok=True)
 
     def configure_optimizers(self):
         if self.optimizer_name == 'SGD':
@@ -361,6 +366,55 @@ class SemanticSegmentationModule(pl.LightningModule):
         self.log('train_loss_step', loss)
         return loss
 
+#### TODO: Extract metric export to own function that can be called from 
+#### hooks, e.g. training_epoch_end(..)    
+#    def _export_metrics(self, metrics, mode):
+#            if mode == 'train':
+#                log_prefix = 'Train'
+#            elif mode == 'validation':
+#                log_prefix = 'Validation'
+#            elif mode == 'test':
+#                log_prefix = 'Test'
+#            else:
+#                raise ValueError(
+#                    f"Illegal `mode` parameter: {mode}."
+#                    " Only `train`, `test` or `validation` are valid.")
+#            for name, metric in metrics.items():
+#                if "conf_mat" in name:
+#                    confmat_epoch = metric.compute()
+#
+#                    # plot confusion_matrix
+#                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
+#                    confmat_logpath = self.confmat_log_dir.joinpath(
+#                            f'confmat_train_epoch{self.current_epoch}.csv')
+#                    self._export_confmat(confmat_logpath, confmat_epoch)
+#                    self.logger.experiment.add_figure(f"{log_prefix}/confusion-matrix", 
+#                            self._plot_confmat(confmat_epoch),
+#                            self.current_epoch)
+#                    self.logger.experiment.add_figure("Train/log-confusion-matrix",
+#                            self._plot_log_confmat(confmat_epoch),
+#                            self.current_epoch)
+#                elif "class" in name:
+#                    # actually compute score from logs
+#                    score_epoch = metric.compute()
+#                    
+#                    # detach from graph, retrieve from gpu-memory, convert to numpy array
+#                    score_epoch = score_epoch.detach().cpu().numpy()
+#
+#                    # extract metric name (remove 'Validation/','Train/','Test/' and replace spaces)
+#                    metric_name = name.split('/')[1].replace(' ', '_')
+#
+#                    # export and plot classwise scores
+#                    score_logpath = self.classmetric_log_dir.joinpath(
+#                            f'{metric_name}_train_epoch{self.current_epoch}.csv')
+#                    self._export_classmetric(score_logpath, score_epoch)
+#                    self.logger.experiment.add_figure(f"Train/{metric_name}",
+#                            self._plot_classmetric(score_epoch),
+#                            self.current_epoch)
+#                else:
+#                    self.log(name, metric.compute())
+#                metric.reset()
+
     def training_epoch_end(self, outs):
         if self.export_metrics:
             for name, metric in self.train_metrics.items():
@@ -374,6 +428,9 @@ class SemanticSegmentationModule(pl.LightningModule):
                     self._export_confmat(confmat_logpath, confmat_epoch)
                     self.logger.experiment.add_figure("Train/confusion-matrix", 
                             self._plot_confmat(confmat_epoch),
+                            self.current_epoch)
+                    self.logger.experiment.add_figure("Train/log-confusion-matrix",
+                            self._plot_log_confmat(confmat_epoch),
                             self.current_epoch)
                 elif "class" in name:
                     # actually compute score from logs
@@ -417,11 +474,19 @@ class SemanticSegmentationModule(pl.LightningModule):
             
             # Visualize prediction of first batch in each epoch
             if batch_idx == 0:
-                self.logger.experiment.add_figure("Prediction (sample batch):",
-                        self._plot_batch_prediction(prediction.detach().cpu().numpy().astype(np.int),
-                            labels.detach().cpu().numpy().astype(np.int)),
+                preds = prediction.detach().cpu().numpy().astype(np.int)
+                labels = labels.detach().cpu().numpy().astype(np.int)
+                self.logger.experiment.add_figure(
+                        "Sample-prediction/validation-batch0:",
+                        self._plot_batch_prediction(preds,labels),
                         self.current_epoch)
-
+                self.logger.experiment.add_figure(
+                        "Sample-prediction/validation-batch0-undef-masked:",
+                        self._plot_batch_prediction(preds, labels, undef_mask=True),
+                        self.current_epoch)
+#            if (self.export_preds_every_n_epochs is not None
+#               and self.current epoch % self.export_preds_every_n_epochs == 0):
+#                sel
 
     def validation_epoch_end(self, outs):
         if self.export_metrics:
@@ -437,6 +502,10 @@ class SemanticSegmentationModule(pl.LightningModule):
                     self.logger.experiment.add_figure("Validation/confusion-matrix", 
                             self._plot_confmat(confmat_epoch),
                             self.current_epoch)
+                    self.logger.experiment.add_figure("Validation/log-confusion-matrix",
+                            self._plot_log_confmat(confmat_epoch),
+                            self.current_epoch)
+
                 elif "class" in name:
                     # actually compute score from logs
                     score_epoch = metric.compute()
@@ -489,6 +558,10 @@ class SemanticSegmentationModule(pl.LightningModule):
                     self.logger.experiment.add_figure("Test/confusion-matrix", 
                             self._plot_confmat(confmat_epoch),
                             self.current_epoch)
+                    self.logger.experiment.add_figure("Test/log-confusion-matrix",
+                            self._plot_log_confmat(confmat_epoch),
+                            self.current_epoch)
+
                 elif "class" in name:
                     # actually compute score from logs
                     score_epoch = metric.compute()
@@ -512,6 +585,13 @@ class SemanticSegmentationModule(pl.LightningModule):
 
     def _export_confmat(self, path, confmat):
         np.savetxt(path, confmat)
+
+    def _plot_log_confmat(self,confmat):
+        # avoid zero division
+        epsilon = 1
+        confmat = confmat + epsilon
+
+        return self._plot_confmat(np.log(confmat))
 
     def _plot_confmat(self, confmat):
         fig, ax = plt.subplots()
@@ -543,8 +623,10 @@ class SemanticSegmentationModule(pl.LightningModule):
         label_colors = np.array(label_defs[:, 2:], dtype='int')
         return label_names, label_colors
 
-    def _plot_batch_prediction(self, pred, label):
+    def _plot_batch_prediction(self, pred, label, undef_mask=False):
         batch_size = label.shape[0]
+        if undef_mask:
+            pred[label == self.ignore_index] = self.ignore_index
         # four predictions per row, followed by four labelimages
         n_cols = 4
         n_rows = 2 * int((batch_size + 3)/4)
