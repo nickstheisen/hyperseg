@@ -415,7 +415,7 @@ class SemanticSegmentationModule(pl.LightningModule):
 #                    self.log(name, metric.compute())
 #                metric.reset()
 
-    def training_epoch_end(self, outs):
+    def on_train_epoch_end(self):
         if self.export_metrics:
             for name, metric in self.train_metrics.items():
                 if "conf_mat" in name:
@@ -488,7 +488,7 @@ class SemanticSegmentationModule(pl.LightningModule):
 #               and self.current epoch % self.export_preds_every_n_epochs == 0):
 #                sel
 
-    def validation_epoch_end(self, outs):
+    def on_validation_epoch_end(self):
         if self.export_metrics:
             for name, metric in self.val_metrics.items():
                 if "conf_mat" in name:
@@ -544,7 +544,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             for _, metric in self.test_metrics.items():
                 metric(prediction, labels)
 
-    def test_epoch_end(self, outs):
+    def on_test_epoch_end(self, outs):
         if self.export_metrics:
             for name, metric in self.test_metrics.items():
                 if "conf_mat" in name:

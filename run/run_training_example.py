@@ -9,12 +9,13 @@ from torch import nn
 import torch
 
 if __name__ == '__main__':
+    torch.set_float32_matmul_precision('highest') #NOTE this can be changed for possible performance gain
     # Seed
     manual_seed=42
     seed_everything(manual_seed, workers=True)
 
     # Dataset Parameters
-    n_classes = 10 # 11 - 1 because class 0 is undefined
+    n_classes = 11 # 11 - 1 because class 0 is undefined
     n_channels = 15
     ignore_index = 10
     precalc_histograms = "False"
@@ -75,7 +76,6 @@ if __name__ == '__main__':
             accelerator='gpu',
             devices=[0], 
             max_epochs=500,
-            auto_lr_find=False,
             precision=precision,
             )
     
