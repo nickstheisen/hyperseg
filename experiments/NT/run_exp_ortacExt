@@ -1,5 +1,0 @@
-#!/usr/bin/bash
-
-python hsiroad/OrtacConv1DExt_hsiroad.py
-python hyko/OrtacConv1DExt_hyko.py
-python hcv2/OrtacConv1DExt_hcv2.py

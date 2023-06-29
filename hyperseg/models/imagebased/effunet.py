@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 from efficientnet_pytorch import EfficientNet
-from .semsegmodule import SemanticSegmentationModule
+from ..semsegmodule import SemanticSegmentationModule
 from torchsummary import summary
 
 
