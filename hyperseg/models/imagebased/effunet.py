@@ -6,8 +6,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 from efficientnet_pytorch import EfficientNet
-from .semsegmodule import SemanticSegmentationModule
-from torchsummary import summary
+from ..semsegmodule import SemanticSegmentationModule
 
 
 # Utility Functions for the model
@@ -97,7 +96,6 @@ class EffUNet(SemanticSegmentationModule):
         self.encoder._conv_stem.stride=1 # change stride of first layer from 2 to 1 to increase o/p size
         self.encoder._conv_stem.kernel_size=(1,1) # 
 
-        #summary(self.encoder, (3, 256, 512), device='cpu')
 
         # freeze encoder
         if freeze_backbone:

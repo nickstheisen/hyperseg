@@ -384,7 +384,7 @@ class SemanticSegmentationModule(pl.LightningModule):
 #                    confmat_epoch = metric.compute()
 #
 #                    # plot confusion_matrix
-#                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
+#                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(int)
 #                    confmat_logpath = self.confmat_log_dir.joinpath(
 #                            f'confmat_train_epoch{self.current_epoch}.csv')
 #                    self._export_confmat(confmat_logpath, confmat_epoch)
@@ -415,14 +415,14 @@ class SemanticSegmentationModule(pl.LightningModule):
 #                    self.log(name, metric.compute())
 #                metric.reset()
 
-    def training_epoch_end(self, outs):
+    def on_train_epoch_end(self):
         if self.export_metrics:
             for name, metric in self.train_metrics.items():
                 if "conf_mat" in name:
                     confmat_epoch = metric.compute()
 
                     # plot confusion_matrix
-                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
+                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(int)
                     confmat_logpath = self.confmat_log_dir.joinpath(
                             f'confmat_train_epoch{self.current_epoch}.csv')
                     self._export_confmat(confmat_logpath, confmat_epoch)
@@ -474,8 +474,8 @@ class SemanticSegmentationModule(pl.LightningModule):
             
             # Visualize prediction of first batch in each epoch
             if batch_idx == 0:
-                preds = prediction.detach().cpu().numpy().astype(np.int)
-                labels = labels.detach().cpu().numpy().astype(np.int)
+                preds = prediction.detach().cpu().numpy().astype(int)
+                labels = labels.detach().cpu().numpy().astype(int)
                 self.logger.experiment.add_figure(
                         "Sample-prediction/validation-batch0:",
                         self._plot_batch_prediction(preds,labels),
@@ -488,14 +488,14 @@ class SemanticSegmentationModule(pl.LightningModule):
 #               and self.current epoch % self.export_preds_every_n_epochs == 0):
 #                sel
 
-    def validation_epoch_end(self, outs):
+    def on_validation_epoch_end(self):
         if self.export_metrics:
             for name, metric in self.val_metrics.items():
                 if "conf_mat" in name:
                     confmat_epoch = metric.compute()
 
                     # plot confusion_matrix
-                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
+                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(int)
                     confmat_logpath = self.confmat_log_dir.joinpath(
                             f'confmat_val_epoch{self.current_epoch}.csv')
                     self._export_confmat(confmat_logpath, confmat_epoch)
@@ -544,14 +544,14 @@ class SemanticSegmentationModule(pl.LightningModule):
             for _, metric in self.test_metrics.items():
                 metric(prediction, labels)
 
-    def test_epoch_end(self, outs):
+    def on_test_epoch_end(self, outs):
         if self.export_metrics:
             for name, metric in self.test_metrics.items():
                 if "conf_mat" in name:
                     confmat_epoch = metric.compute()
 
                     # plot confusion_matrix
-                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(np.int)
+                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(int)
                     confmat_logpath = self.confmat_log_dir.joinpath(
                             f'confmat_val_epoch{self.current_epoch}.csv')
                     self._export_confmat(confmat_logpath, confmat_epoch)
