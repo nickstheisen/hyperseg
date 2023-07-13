@@ -12,7 +12,7 @@ import pytorch_lightning as pl
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
-from hyperseg.datasets.transforms import ToTensor
+from hyperseg.datasets.transforms import ToTensor, PermuteData
 
 class WHUOHS(pl.LightningDataModule):
     def __init__( 
@@ -20,6 +20,7 @@ class WHUOHS(pl.LightningDataModule):
             basepath: str,
             batch_size: int,
             num_workers: int,
+            n_classes: int = 24
             ):
         super().__init__()
         
@@ -30,13 +31,14 @@ class WHUOHS(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.transform = transforms.Compose([
-                            ToTensor()
+                            ToTensor(),
+                            PermuteData(new_order=[2,0,1])
                         ])
         self.c_hist_train = None
         self.c_hist_val = None
         self.c_hist_test = None
 
-        self.n_classes = 24
+        self.n_classes = n_classes
 
     def setup(self, stage: Optional[str] = None):
         self.dataset_train = WHUOHSDataset(
@@ -118,17 +120,13 @@ class WHUOHSDataset(Dataset):
     def __len__(self):
         return len(self.namelist)
 
-if __name__ == '__main__':
-    datamodule = WHUOHS(basepath='/mnt/data/data/WHU-OHS/',
-                        batch_size=8,
-                        num_workers=8)
-    datamodule.setup()
-    print(len(datamodule.test_dataloader()))
-    for data in datamodule.test_dataloader():
-        print(data[0].max(), data[0].min())
-    print(len(datamodule.train_dataloader()))
-    print(len(datamodule.val_dataloader()))
-
-
-
-
+#if __name__ == '__main__':
+#    datamodule = WHUOHS(basepath='/mnt/data/data/WHU-OHS/',
+#                        batch_size=8,
+#                        num_workers=8)
+#    datamodule.setup()
+#    print(len(datamodule.test_dataloader()))
+#    for data in datamodule.test_dataloader():
+#        print(data[0].max(), data[0].min())
+#    print(len(datamodule.train_dataloader()))
+#    print(len(datamodule.val_dataloader()))
