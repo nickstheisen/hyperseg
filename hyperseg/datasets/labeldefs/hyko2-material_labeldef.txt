@@ -1,0 +1,9 @@
+0, chlorophyll, 0, 255, 0
+1, sky, 0, 0, 255
+2, street, 255, 0, 0
+3, soil, 170, 85, 0
+4, wood, 170, 170, 127
+5, metal, 0, 255, 255
+6, plastic, 255, 85, 0
+7, paper, 255, 85, 255
+8, undefined, 0, 0, 0

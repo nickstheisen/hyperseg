@@ -1,0 +1,11 @@
+0, road, 128, 64, 128
+1, sidewalk, 244, 35, 232
+2, lane_markers, 255, 0, 255
+3, grass, 0, 255, 0
+4, vegetation, 107, 142, 35
+5, panels/signs/trafficlight, 250, 170, 30
+6, building, 70, 70, 70
+7, vehicle, 255, 255, 0
+8, person, 220, 20, 60
+9, sky, 70, 130, 180
+10, undefined, 0, 0, 0
