@@ -12,7 +12,8 @@ import pytorch_lightning as pl
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
-from hyperseg.datasets.transforms import ToTensor, PermuteData
+from hyperseg.datasets.analysis.tools import StatCalculator
+from hyperseg.datasets.transforms import ToTensor, PermuteData, Normalize
 
 class WHUOHS(pl.LightningDataModule):
     def __init__( 
@@ -20,7 +21,8 @@ class WHUOHS(pl.LightningDataModule):
             basepath: str,
             batch_size: int,
             num_workers: int,
-            n_classes: int = 24
+            n_classes: int = 24,
+            normalize: bool = False,
             ):
         super().__init__()
         
@@ -40,6 +42,11 @@ class WHUOHS(pl.LightningDataModule):
 
         self.n_classes = n_classes
 
+        # statistics (if normalization is activated)
+        self.normalize = normalize
+        self.means = None
+        self.stds = None
+
     def setup(self, stage: Optional[str] = None):
         self.dataset_train = WHUOHSDataset(
                                 basepath=self.basepath,
@@ -55,6 +62,16 @@ class WHUOHS(pl.LightningDataModule):
                                 basepath=self.basepath,
                                 transform=self.transform,
                                 mode='test')
+
+        # calculate data statistics for normalization
+        if self.normalize:
+            stat_calc = StatCalculator(self.dataset_train)
+            self.means, self.stds = stat_calc.getDatasetStats()
+
+            # enable normalization in whole data set
+            self.dataset_train.enable_normalization(self.means, self.stds)
+            self.dataset_val.enable_normalization(self.means, self.stds)
+            self.dataset_test.enable_normalization(self.means, self.stds)
 
     def train_dataloader(self):
         return DataLoader(
@@ -92,6 +109,14 @@ class WHUOHSDataset(Dataset):
         self.labeldir = self.basepath.joinpath(self.mode,'label')
         self.namelist = [ p.stem for p in self.imagedir.iterdir() 
                             if(p.suffix == '.tif') ]
+
+    def enable_normalization(self, means, stds):
+        self._transform = transforms.Compose([
+            self._transform,
+            Normalize(means=means, stds=stds)
+        ])
+        self.mean = means
+        self.std = stds
 
     def __getitem__(self, i):
         image_path = self.imagedir.joinpath(f'{self.namelist[i]}.tif')

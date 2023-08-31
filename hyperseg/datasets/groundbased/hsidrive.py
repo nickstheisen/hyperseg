@@ -4,7 +4,10 @@ import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 import pytorch_lightning as pl
 from torchvision import transforms
-from hyperseg.datasets.transforms import ToTensor, ReplaceLabels
+
+
+from hyperseg.datasets.analysis.tools import StatCalculator
+from hyperseg.datasets.transforms import ToTensor, ReplaceLabels, Normalize
 
 from typing import List, Any, Optional
 from pathlib import Path
@@ -41,6 +44,12 @@ class HSIDriveDataset(Dataset):
     def samplelist(self):
         return self._samplelist
 
+    def enable_normalization(self, means, stds):
+        self._transform = transforms.Compose([
+            self._transform,
+            Normalize(means=means, stds=stds)
+        ])
+
     def __getitem__(self, idx):
         samplename = self._samplelist[idx]
         data = loadmat(self._datapath.joinpath(samplename + "_TC.mat"))['cube']
@@ -62,6 +71,7 @@ class HSIDrive(pl.LightningDataModule):
         val_prop: float, # validation proportion (of all data)
         manual_seed: int=None,
         precalc_histograms: bool=False,
+        normalize: bool=False,
         ):
         super().__init__()
         
@@ -83,7 +93,12 @@ class HSIDrive(pl.LightningDataModule):
         self.c_hist_val = None
         self.c_hist_test = None
 
-        self.n_classes = 10
+        self.n_classes = 10        
+
+        # statistics (if normalization is activated)
+        self.normalize = normalize
+        self.means = None
+        self.stds = None
 
     def class_histograms(self):
         if self.c_hist_train is not None :
@@ -116,6 +131,14 @@ class HSIDrive(pl.LightningDataModule):
             self.c_hist_test = label_histogram(
                     self.dataset_test, self.n_classes)
 
+        # calculate data statistics for normalization
+        if self.normalize:
+            stat_calc = StatCalculator(self.dataset_train)
+            self.means, self.stds = stat_calc.getDatasetStats()
+            print(f"==Channel means==\n{self.means}\n\n==Channel StDevs==\n{self.stds}")
+
+            # enable normalization in whole data set
+            dataset.enable_normalization(self.means, self.stds)
 
     def train_dataloader(self):
         return DataLoader(

@@ -1,6 +1,7 @@
 import torch
 from sklearn.decomposition import PCA
 import numpy as np
+from torchvision import transforms
 
 class ToTensor(object):
     """ Convert tuples of hyperspectral data and labels to tensors."""
@@ -80,4 +81,18 @@ class PCADR(object):
         out_patch = np.reshape(X, out_shape)
 
         return (out_patch, label)
+
+class Normalize(object):
+    """Normalize hyperspectral image with given channel means `means` and channel stds `stds`."""
+    def __init__(self, means, stds):
+        self._norm = transforms.Normalize(mean=means, std=stds)
+        self.means = means
+        self.stds = stds
+
+    def __call__(self, sample):
+        patch, label = sample
+        patch = self._norm(patch)
+        #patch = patch - self.means[None,:,None,None]
+
+        return (patch, label)
         

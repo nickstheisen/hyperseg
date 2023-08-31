@@ -24,6 +24,8 @@ setup(
         "imageio",
         "tifffile",
         "efficientnet_pytorch",
-        "torchinfo"
+        "torchinfo",
+        "datashader",
+        "pandas",
         ],
 )

@@ -227,6 +227,29 @@ class StatCalculator():
     described here: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
     """
     def getDatasetStats(self):
+        data,_ = next(iter(self.dataloader))
+        n_ch = data.shape[1]
+        count = 0
+
+        mean = torch.zeros(n_ch)
+        std_dev = torch.zeros(n_ch)
+        
+        for data, _ in tqdm(self.dataloader):
+            b, c, h, w = data.shape
+            num_pixels = b * h * w
+            mean += torch.sum(data, [0,2,3])
+            count += num_pixels
+        mean /= count
+        for data, _ in tqdm(self.dataloader):
+            centered = data - mean[None,:,None,None]
+            sq_centered = centered **2
+            std_dev += torch.sum(sq_centered, [0,2,3])
+
+        std_dev /= count
+        std_dev = std_dev ** 0.5
+        return mean, std_dev
+        print(f"__Calculated___\n{mean}\n {std_dev}")
+
         data, _ = next(iter(self.dataloader))
         n_ch = data.shape[1]
         
@@ -242,4 +265,5 @@ class StatCalculator():
             mean += torch.sum(delta, dim=[0,2,3]) / count
             delta2 = data - mean[None,:,None, None]
             m2 += torch.sum(torch.mul(delta, delta2), dim=[0,2,3])
+        print(f"__Approximated__\n{mean}\n {m2/count}")
         return mean, m2/count

@@ -1,15 +1,17 @@
 #!/usr/bin/env python
+import torch
+from torch.utils.data import Dataset, DataLoader, random_split
+import pytorch_lightning as pl
+from torchvision import transforms
 
 import h5py
 
 from typing import List, Any, Optional
 from pathlib import Path
 
-import torch
-from torch.utils.data import Dataset, DataLoader, random_split
-import pytorch_lightning as pl
-from torchvision import transforms
 import numpy as np
+from hyperseg.datasets.analysis.tools import StatCalculator
+from hyperseg.datasets.transforms import Normalize
 
 def label_histogram(dataset, n_classes):
     label_hist = torch.zeros(n_classes) # do not count 'unefined'(highest class_id)
@@ -32,7 +34,8 @@ class HSDataModule(pl.LightningDataModule):
             val_prop: float, # validation proportion (of all data)
             n_classes: int,
             manual_seed: int=None,
-            precalc_histograms: bool=False
+            precalc_histograms: bool=False,
+            normalize: bool=False,
     ):
         super().__init__()
         
@@ -50,6 +53,11 @@ class HSDataModule(pl.LightningDataModule):
         self.c_hist_train = None
         self.c_hist_val = None
         self.c_hist_test = None
+
+        # statistics (if normalization is activated)
+        self.normalize = normalize
+        self.means = None
+        self.stds = None
 
     def class_histograms(self):
         if self.c_hist_train is not None :
@@ -87,6 +95,14 @@ class HSDataModule(pl.LightningDataModule):
             self.c_hist_test = label_histogram(
                     self.dataset_test, self.n_classes)
 
+        # calculate data statistics for normalization
+        if self.normalize:
+            stat_calc = StatCalculator(self.dataset_train)
+            self.means, self.stds = stat_calc.getDatasetStats()
+
+            # enable normalization in whole data set
+            dataset.enable_normalization(self.means, self.stds)
+                
     def train_dataloader(self):
         return DataLoader(self.dataset_train,
                 batch_size=self.batch_size,
@@ -123,6 +139,14 @@ class GroundBasedHSDataset(Dataset):
 
     def samplelist(self):
         return self._samplelist
+    
+    def enable_normalization(self, means, stds):
+        self._transform = transforms.Compose([
+            self._transform,
+            Normalize(means=means, stds=stds)
+        ])
+        self.mean = means
+        self.std = stds
 
     def __getitem__(self, idx):
         h5file = h5py.File(self._filepath)
@@ -131,5 +155,6 @@ class GroundBasedHSDataset(Dataset):
 
         if self._transform:
             sample = self._transform(sample)
+        
         h5file.close()
         return sample
