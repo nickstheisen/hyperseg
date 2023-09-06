@@ -74,6 +74,7 @@ class HSIDrive(pl.LightningDataModule):
         normalize: bool=False,
         ):
         super().__init__()
+        self.hparams['dataset_name'] = "HSIDrive"
         
         self.save_hyperparameters()
 
@@ -94,6 +95,7 @@ class HSIDrive(pl.LightningDataModule):
         self.c_hist_test = None
 
         self.n_classes = 10        
+        self.n_channels = 25
 
         # statistics (if normalization is activated)
         self.normalize = normalize
@@ -154,9 +156,6 @@ class HSIDrive(pl.LightningDataModule):
                 num_workers=self.num_workers)
 
     def test_dataloader(self):
-        # using val-set is not a typo, unfortunately the dataset authors provide only train and valid
-        # ation sets. They use the validation set also as test set. We do the same to keep experiments
-        # comparable
         return DataLoader(
                 self.dataset_val, 
                 batch_size=self.batch_size,
