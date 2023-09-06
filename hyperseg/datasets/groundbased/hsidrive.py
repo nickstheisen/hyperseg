@@ -157,7 +157,7 @@ class HSIDrive(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(
-                self.dataset_val, 
+                self.dataset_test, 
                 batch_size=self.batch_size,
                 shuffle=False,
                 num_workers=self.num_workers)
