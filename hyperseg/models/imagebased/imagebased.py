@@ -473,7 +473,10 @@ class SemanticSegmentationModule(pl.LightningModule):
 
     def test_step(self, test_batch, batch_idx):
         inputs, labels = test_batch
-        prediction = self.forward(inputs)
+        if self.augmentation:
+            prediction, _ = self.forward(inputs,val_mode=True)
+        else:
+            prediction = self.forward(inputs)
 
         # convert prediction to same shape as ground-truth labels
         # (? pretty sure this is what happens, but I should have
