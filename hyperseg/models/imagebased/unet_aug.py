@@ -84,7 +84,7 @@ class AugmentationModule(nn.Module):
     def __init__(self):
         super().__init__()
         self.augmentation = AugmentationSequential(
-                                K.augmentation.RandomHorizontalFlip(p=0.5),
+                                K.augmentation.RandomHorizontalFlip(p=0.1),
                                 data_keys=["input","mask"])
         
     def forward(self, x, labels):
@@ -201,7 +201,7 @@ class UNetAug(SemanticSegmentationModule):
 
         #self.mod = ModLayer(self.n_channels, ceildiv(self.n_channels,4), dropout2d=self.dropout2d)
         #self.inc = DoubleConv(ceildiv(self.n_channels,4), 64, batch_norm=self.batch_norm)
-        self.mod = ModLayer()
+        #self.mod = ModLayer()
         if self.augmentation:
             self.aug = AugmentationModule()
         self.inc = DoubleConv(self.n_channels, 64, batch_norm=self.batch_norm)
@@ -219,7 +219,7 @@ class UNetAug(SemanticSegmentationModule):
     def forward(self, x, labels=None, val_mode=False):
         # TODO inc below isnt taking previous as input!!!
         #x = torch.cat((x,m),1)
-        x = self.mod(x)
+        #x = self.mod(x)
         if not val_mode:
             x, labels = self.aug(x, labels)
 
