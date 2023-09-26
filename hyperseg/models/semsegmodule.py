@@ -43,9 +43,7 @@ class SemanticSegmentationModule(pl.LightningModule):
     ):
         super(SemanticSegmentationModule, self).__init__(**kwargs)
 
-        self.hparams["model_name"] = type(self).__name__
-
-        self.n_classes = n_classes
+        self.n_classes = n_classes if (ignore_index < 0) else n_classes + 1
         self.n_channels = n_channels
        
         # optimizer
@@ -317,7 +315,6 @@ class SemanticSegmentationModule(pl.LightningModule):
                     eps=self.optimizer_eps)
         else :
             raise RuntimeError(f'Optimizer {self.optimizer_name} unknown!')
-        print(optimizer)
         return optimizer
 
     def training_step(self, train_batch, batch_idx):
@@ -339,7 +336,7 @@ class SemanticSegmentationModule(pl.LightningModule):
         # convert prediction to same shape as ground-truth labels
         # (? pretty sure this is what happens, but I should have
         #  added a comment in the first place)
-        prediction =  T.Resize((labels.shape[1:3]))(prediction)
+        #prediction =  T.Resize((labels.shape[1:3]))(prediction)
         '''
         print("===== prediction ====")        
         print(prediction.dtype)
@@ -462,9 +459,9 @@ class SemanticSegmentationModule(pl.LightningModule):
         #  added a comment in the first place)
         # TODO (RB) this doesn't seem to do anything, prediction.shape is the same before
         # and after
-        prediction =  T.Resize((labels.shape[1:3]))(prediction)
+        #prediction =  T.Resize((labels.shape[1:3]))(prediction)
         loss = self.criterion(prediction, labels.squeeze(dim=1))
-
+        
         if self.export_metrics:
             prediction = prediction.argmax(dim=1, keepdims=True)
             labels = labels.unsqueeze(1)
@@ -534,7 +531,7 @@ class SemanticSegmentationModule(pl.LightningModule):
         # convert prediction to same shape as ground-truth labels
         # (? pretty sure this is what happens, but I should have
         #  added a comment in the first place)
-        prediction =  T.Resize((labels.shape[1:3]))(prediction)
+        #prediction =  T.Resize((labels.shape[1:3]))(prediction)
         loss = self.criterion(prediction, labels.squeeze(dim=1))
         
         if self.export_metrics:
@@ -622,18 +619,20 @@ class SemanticSegmentationModule(pl.LightningModule):
         label_names = np.array(label_defs[:,1])
         label_colors = np.array(label_defs[:, 2:], dtype='int')
         return label_names, label_colors
-
-    def _plot_batch_prediction(self, pred, label, undef_mask=False):
-        batch_size = label.shape[0]
+    
+    # plot ground truth and predictions
+    # `max_imgs` limits number of images to avoid images being very small in the plot
+    def _plot_batch_prediction(self, pred, label, undef_mask=False, max_imgs=8):
+        batch_size = min(label.shape[0], max_imgs)
         if undef_mask:
             pred[label == self.ignore_index] = self.ignore_index
         # four predictions per row, followed by four labelimages
-        n_cols = 4
-        n_rows = 2 * int((batch_size + 3)/4)
+        n_cols = min(batch_size, 4)
+        n_rows = 2 * int((batch_size + n_cols - 1)/n_cols)
         figure, axes = plt.subplots(nrows=n_rows, ncols=n_cols, squeeze=False, figsize=(12,12))
         for i in range(batch_size):
-            r = i % 4
-            c = 2 * int(i / 4)
+            r = i % n_cols
+            c = 2 * int(i / n_cols)
             
             axes[c, r].imshow(self.label_colors[label[i]].squeeze())
             axes[c+1, r].imshow(self.label_colors[pred[i]].squeeze())
