@@ -1,4 +1,4 @@
-0, undefined, 0, 0, 0
+0, ocean, 161, 161, 161
 1, paddy-field, 190, 210, 255
 2, dry-farm, 0, 255, 197
 3, woodland, 38, 115, 0
@@ -22,4 +22,4 @@
 21, marshland, 168, 0, 132
 22, bare-land, 115, 0, 76
 23, bare-rock, 255, 115, 223
-24, ocean, 161, 161, 161
+24, undefined, 0, 0, 0

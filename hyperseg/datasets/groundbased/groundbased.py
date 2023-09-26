@@ -32,10 +32,11 @@ class HSDataModule(pl.LightningDataModule):
             batch_size: int,
             train_prop: float, # train proportion (of all data)
             val_prop: float, # validation proportion (of all data)
-            n_classes: int,
+            label_def: str,
             manual_seed: int=None,
             precalc_histograms: bool=False,
             normalize: bool=False,
+            spectral_average: bool=False,
     ):
         super().__init__()
         
@@ -46,8 +47,11 @@ class HSDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.train_prop = train_prop
         self.val_prop = val_prop
-        self.n_classes = n_classes
         self.manual_seed = manual_seed
+        
+        self.label_def = label_def
+
+        self.spectral_average = spectral_average
         
         self.precalc_histograms=precalc_histograms
         self.c_hist_train = None

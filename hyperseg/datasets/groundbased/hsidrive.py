@@ -7,7 +7,7 @@ from torchvision import transforms
 
 
 from hyperseg.datasets.analysis.tools import StatCalculator
-from hyperseg.datasets.transforms import ToTensor, ReplaceLabels, Normalize
+from hyperseg.datasets.transforms import ToTensor, ReplaceLabels, Normalize, SpectralAverage
 
 from typing import List, Any, Optional
 from pathlib import Path
@@ -69,9 +69,12 @@ class HSIDrive(pl.LightningDataModule):
         num_workers: int,
         train_prop: float, # train proportion (of all data)
         val_prop: float, # validation proportion (of all data)
+        label_def: str,
         manual_seed: int=None,
         precalc_histograms: bool=False,
         normalize: bool=False,
+        spectral_average: bool=False,
+        ignore_water:bool=True,
         ):
         super().__init__()
         self.hparams['dataset_name'] = "HSIDrive"
@@ -81,21 +84,38 @@ class HSIDrive(pl.LightningDataModule):
         self.basepath = Path(basepath)
         self.train_prop = train_prop
         self.val_prop = val_prop
+
+        self.spectral_average = spectral_average
+        self.ignore_water = ignore_water
         
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.transform = transforms.Compose([
+        if ignore_water:
+            self.transform = transforms.Compose([
+                            ToTensor(),
+                            ReplaceLabels({0:9, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:9, 9:7, 10:8}) # replace undefined 0 and water labels 8 with 9 and then shift labels according
+                        ])
+        else:
+            self.transform = transforms.Compose([
                             ToTensor(),
                             ReplaceLabels({0:10, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7, 9:8, 10:9}) # replace undefined label 0 with 10 and then shift labels by one
                         ])
+        if spectral_average:
+            self.transform = transforms.Compose([
+                                self.transform,
+                                SpectralAverage()
+                             ])
+        
         self.manual_seed = manual_seed
         self.precalc_histograms=precalc_histograms
         self.c_hist_train = None
         self.c_hist_val = None
         self.c_hist_test = None
 
-        self.n_classes = 10        
-        self.n_channels = 25
+        self.n_classes = 9 if self.ignore_water else 10
+        self.n_channels = 1 if self.spectral_average else 25 
+        self.undef_idx = 9 if self.ignore_water else 10
+        self.label_def = label_def
 
         # statistics (if normalization is activated)
         self.normalize = normalize

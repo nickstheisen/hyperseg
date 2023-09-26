@@ -13,7 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 from hyperseg.datasets.analysis.tools import StatCalculator
-from hyperseg.datasets.transforms import ToTensor, PermuteData, Normalize
+from hyperseg.datasets.transforms import ToTensor, PermuteData, Normalize, ReplaceLabels, SpectralAverage
 
 class WHUOHS(pl.LightningDataModule):
     def __init__( 
@@ -21,8 +21,9 @@ class WHUOHS(pl.LightningDataModule):
             basepath: str,
             batch_size: int,
             num_workers: int,
-            n_classes: int = 24,
+            label_def: str,
             normalize: bool = False,
+            spectral_average: bool=False,
             ):
         super().__init__()
         
@@ -30,17 +31,29 @@ class WHUOHS(pl.LightningDataModule):
 
         self.basepath = Path(basepath).expanduser()
         
+        self.spectral_average = spectral_average
+        
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.transform = transforms.Compose([
                             ToTensor(),
-                            PermuteData(new_order=[2,0,1])
+                            PermuteData(new_order=[2,0,1]),
+                            ReplaceLabels({0:24, 24:0}) # move undefined label to the end
                         ])
-        self.c_hist_train = None
-        self.c_hist_val = None
-        self.c_hist_test = None
+        #self.c_hist_train = None
+        #self.c_hist_val = None
+        #self.c_hist_test = None
 
-        self.n_classes = n_classes
+        if spectral_average:
+            self.transform = transforms.Compose([
+                                self.transform,
+                                SpectralAverage()
+                             ])
+
+        self.n_classes = 24
+        self.n_channels = 1 if self.spectral_average else 32 
+        self.undef_idx = 24
+        self.label_def = label_def
 
         # statistics (if normalization is activated)
         self.normalize = normalize

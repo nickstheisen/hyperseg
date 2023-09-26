@@ -2,7 +2,7 @@
 
 from .groundbased import HSDataModule
 from torchvision import transforms
-from hyperseg.datasets.transforms import ToTensor, PermuteData, ReplaceLabels
+from hyperseg.datasets.transforms import ToTensor, PermuteData, ReplaceLabels, SpectralAverage
 
 class HyKo2(HSDataModule):
     def __init__(self, label_set, **kwargs):
@@ -24,3 +24,14 @@ class HyKo2(HSDataModule):
         else: 
             print('define labelset parameter as either `semantic` or `material`')
             sys.exit()
+
+        if self.spectral_average:
+            self.transform = transforms.Compose([
+                self.transform,
+                SpectralAverage()
+            ])
+
+        self.n_classes = 10
+        self.n_channels = 1 if self.spectral_average else 15
+        self.undef_idx=10
+

@@ -96,3 +96,13 @@ class Normalize(object):
 
         return (patch, label)
         
+class SpectralAverage(object):
+    """Reduce spectral dimension of images to 1 by averaging all channels."""
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        patch, label = sample
+        patch = patch.mean(dim=0, keepdim=True)
+
+        return (patch, label)

@@ -1,0 +1,10 @@
+0, road, 76, 76, 76
+1, road_marks, 255, 255, 255
+2, vegetation, 0, 255, 0
+3, painted-metal, 255, 0, 0
+4, sky, 0, 0, 255
+5, concrete/stone/brick, 102, 51, 0
+6, pedestrian/cyclist, 255, 255, 0
+7, unpained-metal, 255, 166, 0
+8, glass/transparent-plastic, 0, 204, 204
+9, undefined, 0, 0, 0
