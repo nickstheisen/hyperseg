@@ -12,7 +12,7 @@
 import os
 import argparse
 from termcolor import colored
-from natsort import natsorted
+from natsort import natsorted, natsort_keygen
 from timeit import default_timer as timer
 import numpy as np
 import pandas as pd
@@ -23,11 +23,22 @@ import concurrent.futures
 def write_ods_summary_from_df(df, path):
     df.index.name = "run"
     df1 = df.groupby("run", sort=False).max()
-    with pd.ExcelWriter(path, engine='odf') as writer:
+    df_best_val_acc_mic = df.sort_values(['run', 'Validation/accuracy-micro'], ascending=False).groupby(['run']).first().sort_values(
+            by="run", key=natsort_keygen())
+    df_best_val_acc_mac = df.sort_values(['run', 'Validation/accuracy-macro'], ascending=False).groupby(['run']).first().sort_values(
+            by="run", key=natsort_keygen())
+    df_best_val_jacc_mac = df.sort_values(['run', 'Validation/jaccard'], ascending=False).groupby(['run']).first().sort_values(
+            by="run", key=natsort_keygen())
+    df_best_val_f1_mac = df.sort_values(['run', 'Validation/f1-macro'], ascending=False).groupby(['run']).first().sort_values(
+            by="run", key=natsort_keygen())
+    with pd.ExcelWriter(path) as writer:
         df1.to_excel(writer, index=True, sheet_name="max_values")
+        df_best_val_jacc_mac.to_excel(writer, index=True, sheet_name="best_val_epochs_macro_jaccard")
+        df_best_val_acc_mac.to_excel(writer, index=True, sheet_name="best_val_epochs_macro_acc")
+        df_best_val_f1_mac.to_excel(writer, index=True, sheet_name="best_val_epochs_macro_f1")
+        df_best_val_acc_mic.to_excel(writer, index=True, sheet_name="best_val_epochs_micro_acc")
         for index in natsorted(set(df.index)):
             df[df.index == index].to_excel(writer, index=False, sheet_name=index)
-
 
 def tflog_to_pandas(path):
     path = path
@@ -121,8 +132,8 @@ if __name__ == '__main__':
     print(f"...took {end-start} seconds.")
 
     pickle_path = args['output_path']+"/"+args['name']+'_results_DF.pkl'
-    ods_path = args['output_path']+"/"+args['name']+'_results_summary.ods'
-    print(colored(f"Writing DataFrame summary to .ods: {ods_path}", "green"))
+    ods_path = args['output_path']+"/"+args['name']+'_results_summary.xlsx'
+    print(colored(f"Writing DataFrame summary to .xlsx: {ods_path}", "green"))
     write_ods_summary_from_df(df, ods_path)
     print(colored(f"Writing pickled DataFrame to: {pickle_path}", "green"))
     df.to_pickle(pickle_path)
