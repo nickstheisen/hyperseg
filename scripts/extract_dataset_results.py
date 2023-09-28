@@ -3,11 +3,7 @@
 # - iterate over all folders in the specified path
 # - for each folder, obtain data just like in the .csv, and put it along the "3rd" dimension of a pandas dataframe
 # - save the pandas dataframe as a pickle file
-# - save the pandas dataframe as an .ods
-
-# DF:
-# index             columns
-# epoch | version   , macro metrics val, micro metrics val, macro metrics train, micro metrics train, class specific metrics
+# - save the pandas dataframe as an .xlsx
 
 import os
 import argparse
@@ -20,7 +16,7 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 from pathlib import Path
 import concurrent.futures
 
-def write_ods_summary_from_df(df, path):
+def write_xlsx_summary_from_df(df, path):
     df.index.name = "run"
     df1 = df.groupby("run", sort=False).max()
     df_best_val_acc_mic = df.sort_values(['run', 'Validation/accuracy-micro'], ascending=False).groupby(['run']).first().sort_values(
@@ -39,6 +35,7 @@ def write_ods_summary_from_df(df, path):
         df_best_val_acc_mic.to_excel(writer, index=True, sheet_name="best_val_epochs_micro_acc")
         for index in natsorted(set(df.index)):
             df[df.index == index].to_excel(writer, index=False, sheet_name=index)
+
 
 def tflog_to_pandas(path):
     path = path
@@ -106,35 +103,57 @@ if __name__ == '__main__':
     parser.add_argument('-p','--path', help='Path to the folder containing the runs for one dataset (e.g. lightning_logs dir).', required=True)
     parser.add_argument('-n','--name', help='Name for the output files, e.g. the name of the dataset used.', required=True)
     parser.add_argument('-o','--output_path', help='Path to folder for output files', required=True)
+    parser.add_argument('-l','--load_pkl_path', help='Path to an existing pickled DF for this dataset to use as cache; to avoid reloading runs already existing in that DF.', required=False)
     args = vars(parser.parse_args())
 
     # TODO convert all of the paths into proper paths to avoid broken paths
 
     path = args['path']
+    load_pkl_path = args['load_pkl_path']
     dfs = []
     folders = natsorted(os.listdir(path))
 
+    # load saved pickle and list existing versions
+    loaded_run_names = set()
+    if load_pkl_path is not None:
+        print(f"Loading pickled DF as cache: {load_pkl_path}")
+        loaded_df = pd.read_pickle(load_pkl_path)
+        loaded_run_names = natsorted(set(loaded_df.index))
+        print(f"Loaded {len(loaded_run_names)} runs:")
+        print(*loaded_run_names, sep="\n")
+
     # TODO better way of checking if run wasn't empty
     run_paths = [path+"/"+r for r in folders if os.path.isfile(path+"/"+r+"/class-metrics/jaccard-class_val_epoch1.csv")]
+    # filter out paths based on run names which are already in loaded_run_names
+    run_paths = [p for p in run_paths if os.path.basename(os.path.normpath(p)) not in loaded_run_names]
+    print(f"Found {len(folders)} new run folders ({len(folders)-len(run_paths)} are empty or already loaded):")
     run_names = [os.path.basename(os.path.normpath(p)) for p in run_paths]
-    print(f"Found {len(folders)} run folders, of which {len(folders)-len(run_paths)} were empty or single epoch runs:")
     print(*run_paths, sep="\n")
-    print("Extracting runs, may take a few minutes...")
+    if not run_paths:
+        if load_pkl_path is not None:
+            print(f"All runs are already in loaded pkl, exiting...")
+            quit()
+        else:
+            print(f"No runs in specified folder, exiting...")
+            quit()
 
+    print("Extracting runs, may take a few minutes...")
     start = timer()
     with concurrent.futures.ProcessPoolExecutor() as ex:
         for _, df in zip(run_paths, ex.map(tflog_to_pandas, run_paths)):
             dfs.append(df)
     df = pd.concat(dfs, keys=run_names)
     df = df.reset_index(level=[1])
+    if load_pkl_path is not None:
+        df = pd.concat([loaded_df, df])
     end = timer()
     print(df)
     print(f"...took {end-start} seconds.")
 
     pickle_path = args['output_path']+"/"+args['name']+'_results_DF.pkl'
-    ods_path = args['output_path']+"/"+args['name']+'_results_summary.xlsx'
-    print(colored(f"Writing DataFrame summary to .xlsx: {ods_path}", "green"))
-    write_ods_summary_from_df(df, ods_path)
+    xlsx_path = args['output_path']+"/"+args['name']+'_results_summary.xlsx'
+    print(colored(f"Writing DataFrame summary to .xlsx: {xlsx_path}", "green"))
+    write_xlsx_summary_from_df(df, xlsx_path)
     print(colored(f"Writing pickled DataFrame to: {pickle_path}", "green"))
     df.to_pickle(pickle_path)
 
