@@ -15,6 +15,9 @@ from torchvision import transforms
 from hyperseg.datasets.analysis.tools import StatCalculator
 from hyperseg.datasets.transforms import ToTensor, PermuteData, Normalize, ReplaceLabels, SpectralAverage
 
+def get_label_path(path):
+        return Path(str(path).replace('image', 'label'))
+
 class WHUOHS(pl.LightningDataModule):
     def __init__( 
             self,
@@ -115,13 +118,20 @@ class WHUOHSDataset(Dataset):
         self._transform = transform
         self.mode = mode
 
-        if mode not in ('train','test','val'):
-            raise RuntimeError("Invalid mode! It must be `train`,`test` or `val`.")
+        if mode not in ('train','test','val','full'):
+            raise RuntimeError("Invalid mode! It must be `train`,`test`, `val` or `full`.")
         
-        self.imagedir = self.basepath.joinpath(self.mode,'image')
-        self.labeldir = self.basepath.joinpath(self.mode,'label')
-        self.namelist = [ p.stem for p in self.imagedir.iterdir() 
-                            if(p.suffix == '.tif') ]
+        if mode in ('train', 'test', 'val'):
+            imagedir = self.basepath.joinpath(self.mode,'image')
+            self._samplelist = [ p for p in imagedir.iterdir() 
+                                if(p.suffix == '.tif')]
+        else:
+            self._samplelist = []
+            for mode in ('train', 'test', 'val'):
+                imagedir = self.basepath.joinpath(mode, 'image')
+                self._samplelist.extend([ p for p in imagedir.iterdir()
+                                    if(p.suffix == '.tif')])
+            
 
     def enable_normalization(self, means, stds):
         self._transform = transforms.Compose([
@@ -132,15 +142,15 @@ class WHUOHSDataset(Dataset):
         self.std = stds
 
     def __getitem__(self, i):
-        image_path = self.imagedir.joinpath(f'{self.namelist[i]}.tif')
-        label_path = self.labeldir.joinpath(f'{self.namelist[i]}.tif')
-        #image = gdal.Open(image_path, gdal.GA_ReadOnly)
-        #label = gdal.Open(label_path, gdal.GA_ReadOnly)
+        image_path = self._samplelist[i]
+        label_path = get_label_path(self._samplelist[i])
 
-        #image = image.ReadAsArray().astype(np.float32) / 10000.0
-        #label = label.ReadAsArray().astype(np.longlong)
+        '''
+        image = gdal.Open(image_path, gdal.GA_ReadOnly)
+        label = gdal.Open(label_path, gdal.GA_ReadOnly)
+        image = image.ReadAsArray().astype(np.float32) / 10000.0
+        label = label.ReadAsArray().astype(np.longlong)
 
-        ''' 
         Above you see how the data is loaded in the authors repo:
         https://github.com/zjjerica/WHU-OHS-Pytorch/tree/main
         However, setting up GDAL with python is a pain in the ass and has dependencies that
@@ -155,8 +165,11 @@ class WHUOHSDataset(Dataset):
             sample = self._transform(sample)
         return sample
 
+    def samplelist(self):
+        return self._samplelist
+
     def __len__(self):
-        return len(self.namelist)
+        return len(self._samplelist)
 
 #if __name__ == '__main__':
 #    datamodule = WHUOHS(basepath='/mnt/data/data/WHU-OHS/',

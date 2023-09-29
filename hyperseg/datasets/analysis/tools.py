@@ -8,10 +8,21 @@ from hyperseg.datasets.utils import load_label_def
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 import datashader as ds
 import datashader.transfer_functions as tr
 import colorcet
+
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+plt.rc('font', size=8)
+
+def load_label_defs(label_def):
+    label_defs = np.loadtxt(label_def, delimiter=',', dtype=str)
+    label_names = np.array(label_defs[:,1])
+    label_colors = np.array(label_defs[:,2:], dtype='int')
+    return label_names, label_colors
 
 class SpectrumPlotter():
     def __init__(
@@ -267,3 +278,70 @@ class StatCalculator():
             m2 += torch.sum(torch.mul(delta, delta2), dim=[0,2,3])
         print(f"__Approximated__\n{mean}\n {m2/count}")
         return mean, m2/count
+
+class ClassDistributionExtractor():
+
+    def __init__(
+                self,
+                dataset: Dataset,
+                label_def,
+                batch_size=1,
+                num_workers=2):
+
+        self.dataset = dataset
+        self.label_names, self.label_colors = load_label_defs(label_def)
+
+        self.dataloader = DataLoader(dataset,
+                            batch_size=batch_size,
+                            shuffle=False,
+                            num_workers=num_workers,
+                            persistent_workers=True)
+        self.n_classes = len(self.label_names)
+        self.aggregator = None     
+
+    def extract(self):
+        self.aggregator = np.zeros((self.n_classes), dtype=np.int64)
+        for _, labels in tqdm(self.dataloader):
+            for c in range(self.n_classes):
+                self.aggregator[c] += np.count_nonzero(labels==c)
+        return self.aggregator
+    
+    def set_abs_class_dist(self, class_dist):
+        self.aggregator = class_dist
+
+    def plot_bars(self, outpath, relative=False, plot_undef='False'):
+        if self.aggregator is None:
+            raise RuntimeError("Before plotting you must either extract the class distribution"
+                " by calling `extract(..)` function or you need to provide the distribution"
+                " through the function `set_abs_class_dist(..)` as numpy-array.")
+        undef_idx = -1
+        for i, name in enumerate(self.label_names):
+            if 'undef' in name:
+                undef_idx = i
+                break
+
+        class_dist = self.aggregator
+        label_names = self.label_names
+        label_colors = self.label_colors / 255.
+
+        if undef_idx >= 0:
+            class_dist = np.delete(class_dist, undef_idx)
+            label_names = np.delete(label_names, undef_idx)
+            label_colors = np.delete(label_colors, undef_idx, axis=0)
+        
+        if relative:
+            class_dist = class_dist/class_dist.sum()
+            class_dist *=100
+
+        y_label = "Relative Abundance of class samples [%]" if relative else "Num. class samples"
+        fig, ax = plt.subplots(layout='constrained')
+        
+        ax.bar(label_names, class_dist, color=label_colors)
+        plt.xticks(label_names, rotation='vertical')
+        ax.set_ylabel(y_label)
+        
+        plt.savefig(outpath)
+        
+            
+        
+
