@@ -13,6 +13,7 @@ import pandas as pd
 import datashader as ds
 import datashader.transfer_functions as tr
 import colorcet
+import cv2
 
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
@@ -342,6 +343,40 @@ class ClassDistributionExtractor():
         
         plt.savefig(outpath)
         
+class DatasetImageExporter():
+    def __init__(
+                self,
+                dataset: Dataset,
+                label_colors,
+    ):
+
+        self.dataset = dataset
+        self.samplelist = dataset.samplelist()
+        self.label_colors = label_colors
+
+    def export(self, output_dir):
+        output_dir_imgs = Path(output_dir).joinpath('imgs')
+        output_dir_labels = Path(output_dir).joinpath('labels')
+        output_dir_imgs.mkdir(parents=True, exist_ok=True)
+        output_dir_labels.mkdir(parents=True, exist_ok=True)
+
+        for i, samplename in enumerate(tqdm(self.samplelist)):
+            image, label = self.dataset[i]
+
+            # prepare image
+            image = torch.mean(image, axis=0)
+            # rescale image
+            image = (image - image.min())/(image.max() - image.min()) 
+            image *= 255
+
+            # colorize labelmap
+            label_img = self.label_colors[label]
+            label_img = label_img[...,::-1]
             
-        
+            file_name = Path(Path(samplename).name).with_suffix('.jpg')
+            image_outpath = output_dir_imgs.joinpath(file_name)
+            cv2.imwrite(str(image_outpath), image.numpy())
+
+            label_outpath = output_dir_labels.joinpath(file_name)
+            cv2.imwrite(str(label_outpath), label_img)
 
