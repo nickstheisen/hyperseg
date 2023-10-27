@@ -8,6 +8,7 @@ class HyperspectralCityV2(HSDataModule):
     def __init__(self, half_precision=False, n_pc=None, **kwargs):
         super().__init__(**kwargs)
         self.half_precision = half_precision
+        self.n_pc = n_pc
 
         self.transform = transforms.Compose([
             ToTensor(half_precision=self.half_precision),

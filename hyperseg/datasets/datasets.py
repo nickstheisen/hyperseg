@@ -73,6 +73,7 @@ def get_datamodule(
             batch_size=replace_if_exists("batch_size", 4, kwargs),
             train_prop=replace_if_exists("train_prop", 0.5, kwargs),
             val_prop=replace_if_exists("val_prop", 0.1, kwargs),
+            manual_seed=replace_if_exists("manual_seed", 42, kwargs),
             half_precision=replace_if_exists("half_precision", True, kwargs),
             label_def=replace_if_exists("label_def", 
                 label_def_dir.joinpath("HCv2_labeldef.txt"),
