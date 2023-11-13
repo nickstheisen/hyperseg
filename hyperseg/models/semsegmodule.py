@@ -95,13 +95,6 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.train_metrics["Train/accuracy-class"] = self.acc_train_class
-        self.f1_train_micro = torchmetrics.F1Score(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
-                average='micro')
-        self.train_metrics["Train/f1-micro"] = self.f1_train_micro
         self.f1_train_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
@@ -156,13 +149,6 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.val_metrics["Validation/accuracy-class"] = self.acc_val_class
-        self.f1_val_micro = torchmetrics.F1Score(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
-                average='micro')
-        self.val_metrics["Validation/f1-micro"] = self.f1_val_micro
         self.f1_val_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
@@ -217,13 +203,6 @@ class SemanticSegmentationModule(pl.LightningModule):
                 mdmc_average=self.mdmc_average, 
                 average='none')
         self.test_metrics["Test/accuracy-class"] = self.acc_test_class
-        self.f1_test_micro = torchmetrics.F1Score(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
-                average='micro')
-        self.test_metrics["Test/f1-micro"] = self.f1_test_micro
         self.f1_test_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
@@ -271,7 +250,8 @@ class SemanticSegmentationModule(pl.LightningModule):
         if self.loss_name == 'cross_entropy':
             self.criterion = nn.CrossEntropyLoss(
                     ignore_index=self.ignore_index,
-                    weight=self.class_weights)
+                    weight=self.class_weights,
+                    reduction='none')
         else : 
             raise RuntimeError(f'Loss function "{self.loss_name}" is not available '
                     'or is not implemented yet')
@@ -346,6 +326,11 @@ class SemanticSegmentationModule(pl.LightningModule):
         '''
 
         loss = self.criterion(prediction, labels.squeeze(dim=1)) 
+
+        # built-in reduction='mean' with CrossEntropyLoss is non-deterministic
+        # on GPU so we do it manually
+        # see: https://discuss.pytorch.org/t/pytorchs-non-deterministic-cross-entropy-loss-and-the-problem-of-reproducibility/172180/8
+        loss = loss.mean()         
         '''
         print("===== loss ====")        
         print(loss.dtype)

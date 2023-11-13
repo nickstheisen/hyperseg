@@ -15,8 +15,13 @@ from datetime import datetime
 from argparse import ArgumentParser
 from pathlib import Path
 
+
 valid_datasets = ['hsidrive','whuohs','hyko2', 'hsiroad', 'hcv2']
 valid_models = ['unet', 'agunet', 'spectr']
+
+def make_reproducible(manual_seed=42):
+    seed_everything(manual_seed, workers=True)
+    torch.use_deterministic_algorithms(True)
 
 def train(args):
     print(args)
@@ -32,8 +37,7 @@ def train(args):
 
     ## General
     torch.set_float32_matmul_precision('high') # can be set to 'medium'|'high'|'highest'
-    manual_seed=42
-    seed_everything(manual_seed, workers=True)
+    make_reproducible()
     
     ## Logging
     log_dir = Path(args.log_dir+f"{args.project_name}/{args.dataset_name}")
@@ -99,7 +103,9 @@ def train(args):
                 spatial_size=datamodule.img_shape,
                 ignore_index=datamodule.undef_idx,
                 label_def=datamodule.label_def,
-                use_entmax15="softmax")
+                use_entmax15="softmax",
+                bilinear=False, # bilinear Upsampling with pytorch is non-deterministic on GPU
+                )
     
     ## Misc
     if args.compile:
@@ -114,7 +120,7 @@ def train(args):
             max_epochs=args.max_epochs,
             precision=precision,
             enable_model_summary=False, # enable for default model parameter printing at start
-            logger=loggers
+            logger=loggers,
             )
 
     # Train!

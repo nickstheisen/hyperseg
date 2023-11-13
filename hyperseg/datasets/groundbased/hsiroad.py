@@ -22,6 +22,7 @@ class HSIRoad(pl.LightningDataModule):
             batch_size: int,
             num_workers: int,
             label_def: str,
+            manual_seed: int=None,
             precalc_histograms: bool=False,
             normalize: bool=False,
             spectral_average: bool=False,
@@ -42,6 +43,7 @@ class HSIRoad(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.label_def = label_def
+        self.manual_seed = manual_seed
 
         self.transform = transforms.Compose([
                             ToTensor()

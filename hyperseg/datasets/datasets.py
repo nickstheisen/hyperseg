@@ -71,6 +71,7 @@ def get_datamodule(
             label_def=replace_if_exists("label_def", 
                 label_def_dir.joinpath("hsi-road_labeldef.txt"),
                 kwargs),
+            manual_seed=replace_if_exists("manual_seed", 42, kwargs),
             prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
             debug=replace_if_exists("debug", False, kwargs),
         )
