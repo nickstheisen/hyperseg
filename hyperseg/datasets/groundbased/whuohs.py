@@ -27,6 +27,8 @@ class WHUOHS(pl.LightningDataModule):
             label_def: str,
             normalize: bool = False,
             spectral_average: bool=False,
+            prep_3dconv:bool=False,
+            debug: bool = False,
             ):
         super().__init__()
         
@@ -35,6 +37,9 @@ class WHUOHS(pl.LightningDataModule):
         self.basepath = Path(basepath).expanduser()
         
         self.spectral_average = spectral_average
+        self.prep_3dconv = prep_3dconv
+        
+        self.debug = debug
         
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -52,9 +57,13 @@ class WHUOHS(pl.LightningDataModule):
                                 self.transform,
                                 SpectralAverage()
                              ])
+        if self.prep_3dconv:
+            self.transform = transforms.Compose([
+                self.transform,
+                InsertEmptyChannelDim(1)
+            ])
 
         self.n_classes = 24
-        self.n_channels = 1 if self.spectral_average else 32 
         self.undef_idx = 24
         self.label_def = label_def
 
@@ -63,21 +72,36 @@ class WHUOHS(pl.LightningDataModule):
         self.means = None
         self.stds = None
 
+        # read dimensions from image
+        dataset = WHUOHSDataset(basepath=self.basepath,
+                    transform=self.transform,
+                    mode='train',
+                    debug=self.debug)
+
+        img, _ = dataset[0]
+        img = img.squeeze()
+        self.img_shape = img.shape[1:]
+        self.n_channels = img.shape[0]
+
+
     def setup(self, stage: Optional[str] = None):
         self.dataset_train = WHUOHSDataset(
                                 basepath=self.basepath,
                                 transform=self.transform,
-                                mode='train')
+                                mode='train',
+                                debug=self.debug)
 
         self.dataset_val = WHUOHSDataset(
                                 basepath=self.basepath,
                                 transform=self.transform,
-                                mode='val')
+                                mode='val',
+                                debug=self.debug)
         
         self.dataset_test = WHUOHSDataset(
                                 basepath=self.basepath,
                                 transform=self.transform,
-                                mode='test')
+                                mode='test',
+                                debug=self.debug)
 
         # calculate data statistics for normalization
         if self.normalize:
@@ -113,10 +137,12 @@ class WHUOHSDataset(Dataset):
     def __init__(self, 
                 basepath,
                 transform,
-                mode='train'):
+                mode='train',
+                debug=False):
         self.basepath = Path(basepath).expanduser()
         self._transform = transform
         self.mode = mode
+        self.debug = debug
 
         if mode not in ('train','test','val','full'):
             raise RuntimeError("Invalid mode! It must be `train`,`test`, `val` or `full`.")
@@ -125,12 +151,22 @@ class WHUOHSDataset(Dataset):
             imagedir = self.basepath.joinpath(self.mode,'image')
             self._samplelist = [ p for p in imagedir.iterdir() 
                                 if(p.suffix == '.tif')]
+            if self.debug:
+                if mode == 'train':
+                    self._samplelist = self._samplelist[:90]
+                elif mode =='val':
+                    self._samplelist = self._samplelist[:10]
+                elif mode =='test':
+                    self._samplelist = self._samplelist[:10]
+            
         else:
             self._samplelist = []
             for mode in ('train', 'test', 'val'):
                 imagedir = self.basepath.joinpath(mode, 'image')
                 self._samplelist.extend([ p for p in imagedir.iterdir()
                                     if(p.suffix == '.tif')])
+                if self.debug:
+                    self._samplelist = self.samplelist[:100]
             
 
     def enable_normalization(self, means, stds):

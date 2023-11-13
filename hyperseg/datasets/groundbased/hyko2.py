@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from .groundbased import HSDataModule
+from .groundbased import HSDataModule, GroundBasedHSDataset
 from torchvision import transforms
 from hyperseg.datasets.transforms import ToTensor, PermuteData, ReplaceLabels, SpectralAverage
 
@@ -34,4 +34,10 @@ class HyKo2(HSDataModule):
         self.n_classes = 10
         self.n_channels = 1 if self.spectral_average else 15
         self.undef_idx=10
+
+        dataset = GroundBasedHSDataset(self.filepath, transform=self.transform)
+        img,_ = dataset[0]
+        img = img.squeeze()
+        self.img_shape = img.shape[1:]
+        self.n_channels = img.shape[0]
 

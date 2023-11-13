@@ -27,13 +27,6 @@ class HyperspectralCityV2(HSDataModule):
                 InsertEmptyChannelDim(1)
             ])
 
-#        if self.spectral_average:
-#            self.n_channels = 1
-#        elif self.n_pc is not None:
-#            self.n_channels = self.n_pc
-#        else:
-#            self.n_channels = 128
-#
         self.n_classes = 19
         self.undef_idx=19
 

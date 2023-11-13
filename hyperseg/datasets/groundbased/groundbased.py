@@ -38,6 +38,7 @@ class HSDataModule(pl.LightningDataModule):
             normalize: bool=False,
             spectral_average: bool=False,
             prep_3dconv: bool=False,
+            debug: bool = False
     ):
         super().__init__()
         
@@ -49,6 +50,7 @@ class HSDataModule(pl.LightningDataModule):
         self.train_prop = train_prop
         self.val_prop = val_prop
         self.manual_seed = manual_seed
+        self.debug = debug
         
         self.label_def = label_def
 
@@ -79,7 +81,7 @@ class HSDataModule(pl.LightningDataModule):
             return None
 
     def setup(self, stage: Optional[str] = None):
-        dataset = GroundBasedHSDataset(self.filepath, transform=self.transform)
+        dataset = GroundBasedHSDataset(self.filepath, transform=self.transform, debug=self.debug)
         train_size = round(self.train_prop * len(dataset))
         val_size = round(self.val_prop * len(dataset))
         test_size = len(dataset) - (train_size + val_size)
@@ -131,14 +133,19 @@ class HSDataModule(pl.LightningDataModule):
 
 class GroundBasedHSDataset(Dataset):
 
-    def __init__(self, filepath, transform):
+    def __init__(self, filepath, transform, debug=False):
         self._filepath = filepath
         
         # if h5file is kept open, the object cannot be pickled and in turn 
         # multi-gpu cannot be used
         h5file = h5py.File(self._filepath, 'r')
+        self.debug = True
         self._samplelist = list(h5file.keys())
         self._transform = transform
+
+        if self.debug:
+            # only use 100 samples overall
+            self._samplelist = self._samplelist[:100]
         h5file.close()
 
     def __len__(self):

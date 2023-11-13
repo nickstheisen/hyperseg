@@ -89,7 +89,8 @@ def train(args):
                 basepath=args.dataset_basepath,
                 batch_size=args.batch_size, 
                 spectral_average=args.spectral_average,
-                prep_3dconv=args.prep_3dconv)
+                prep_3dconv=args.prep_3dconv,
+                debug=args.debug)
 
     ## Model
     model = get_model(args.model_name, 
@@ -158,6 +159,8 @@ if __name__ == '__main__':
         help=("Defines path where result of pca should be stored."))
     parser.add_argument('--prep-3dconv', action='store_true',
         help=("If set, data is prepared to be used with 3D-convs."))
+    parser.add_argument('--debug', action='store_true',
+        help=("Reduces the datasets to 100 samples overall to allow faster debugging."))
 
     args = parser.parse_args()
     train(args)
