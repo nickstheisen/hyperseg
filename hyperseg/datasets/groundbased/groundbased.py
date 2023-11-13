@@ -37,6 +37,7 @@ class HSDataModule(pl.LightningDataModule):
             precalc_histograms: bool=False,
             normalize: bool=False,
             spectral_average: bool=False,
+            prep_3dconv: bool=False,
     ):
         super().__init__()
         
@@ -52,6 +53,7 @@ class HSDataModule(pl.LightningDataModule):
         self.label_def = label_def
 
         self.spectral_average = spectral_average
+        self.prep_3dconv = prep_3dconv
         
         self.precalc_histograms=precalc_histograms
         self.c_hist_train = None
@@ -62,6 +64,7 @@ class HSDataModule(pl.LightningDataModule):
         self.normalize = normalize
         self.means = None
         self.stds = None
+
 
     def class_histograms(self):
         if self.c_hist_train is not None :

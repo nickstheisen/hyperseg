@@ -21,10 +21,12 @@ class ToTensor(object):
 
 class InsertEmptyChannelDim(object):
     """ Insert Empty Channel dimension to apply 3D-Convolutions to hyperspectral images tensors."""
+    def __init__(self, dim=0):
+        self.dim = dim
 
     def __call__(self, sample):
         patch, label = sample
-        patch = torch.unsqueeze(patch, 0)
+        patch = torch.unsqueeze(patch, self.dim)
 
         return (patch, label)
 
@@ -106,3 +108,4 @@ class SpectralAverage(object):
         patch = patch.mean(dim=0, keepdim=True)
 
         return (patch, label)
+

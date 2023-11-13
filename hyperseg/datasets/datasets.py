@@ -29,6 +29,7 @@ def get_datamodule(
                 kwargs),
             spectral_average=replace_if_exists("spectral_average", True, kwargs),
             ignore_water=True,      # water class is ignored 
+            prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
         )
     elif dataset_name == 'whuohs':
         datamodule = WHUOHS(
@@ -40,6 +41,7 @@ def get_datamodule(
                 label_def_dir.joinpath("whuohs_labeldef.txt"),
                 kwargs),
             spectral_average=replace_if_exists("spectral_average", True, kwargs),
+            prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
         )
     elif dataset_name == 'hyko2':
         datamodule = HyKo2(
@@ -54,6 +56,7 @@ def get_datamodule(
                 label_def_dir.joinpath("hyko2-semantic_labeldef.txt"),
                 kwargs),
             spectral_average=replace_if_exists("spectral_average", True, kwargs),
+            prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
         )
     elif dataset_name == 'hsiroad':
         datamodule = HSIRoad(
@@ -65,6 +68,7 @@ def get_datamodule(
             label_def=replace_if_exists("label_def", 
                 label_def_dir.joinpath("hsi-road_labeldef.txt"),
                 kwargs),
+            prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
         )
     elif dataset_name == 'hcv2':
         datamodule = HyperspectralCityV2(
@@ -79,11 +83,12 @@ def get_datamodule(
                 label_def_dir.joinpath("HCv2_labeldef.txt"),
                 kwargs),
             spectral_average=replace_if_exists("spectral_average", True, kwargs),
+            prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
         )
 
     else:
         raise NotImplementedError(f"Dataset '{dataset_name}' does not exist.")
-    
+
     return datamodule
 
             

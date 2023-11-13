@@ -7,7 +7,7 @@ from torchvision import transforms
 
 
 from hyperseg.datasets.analysis.tools import StatCalculator
-from hyperseg.datasets.transforms import ToTensor, ReplaceLabels, Normalize, SpectralAverage
+from hyperseg.datasets.transforms import ToTensor, ReplaceLabels, Normalize, SpectralAverage, InsertEmptyChannelDim
 
 from typing import List, Any, Optional
 from pathlib import Path
@@ -75,6 +75,7 @@ class HSIDrive(pl.LightningDataModule):
         normalize: bool=False,
         spectral_average: bool=False,
         ignore_water:bool=True,
+        prep_3dconv:bool=False,
         ):
         super().__init__()
         self.hparams['dataset_name'] = "HSIDrive"
@@ -87,6 +88,7 @@ class HSIDrive(pl.LightningDataModule):
 
         self.spectral_average = spectral_average
         self.ignore_water = ignore_water
+        self.prep_3dconv = prep_3dconv
         
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -100,11 +102,17 @@ class HSIDrive(pl.LightningDataModule):
                             ToTensor(),
                             ReplaceLabels({0:10, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7, 9:8, 10:9}) # replace undefined label 0 with 10 and then shift labels by one
                         ])
-        if spectral_average:
+        if self.spectral_average:
             self.transform = transforms.Compose([
                                 self.transform,
                                 SpectralAverage()
                              ])
+        if self.prep_3dconv:
+            self.transform = transforms.Compose([
+                self.transform,
+                InsertEmptyChannelDim(1)
+            ])
+
         
         self.manual_seed = manual_seed
         self.precalc_histograms=precalc_histograms
@@ -113,14 +121,22 @@ class HSIDrive(pl.LightningDataModule):
         self.c_hist_test = None
 
         self.n_classes = 9 if self.ignore_water else 10
-        self.n_channels = 1 if self.spectral_average else 25 
         self.undef_idx = 9 if self.ignore_water else 10
         self.label_def = label_def
+
 
         # statistics (if normalization is activated)
         self.normalize = normalize
         self.means = None
         self.stds = None
+        
+        # read dimensions from image
+        dataset = HSIDriveDataset(self.basepath, self.transform)
+        img, _ = dataset[0]
+        img = img.squeeze()
+        self.img_shape = img.shape[1:]
+        self.n_channels = img.shape[0]
+       
 
     def class_histograms(self):
         if self.c_hist_train is not None :

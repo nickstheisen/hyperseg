@@ -16,7 +16,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 valid_datasets = ['hsidrive','whuohs','hyko2', 'hsiroad', 'hcv2']
-valid_models = ['unet', 'agunet']
+valid_models = ['unet', 'agunet', 'spectr']
 
 def train(args):
     print(args)
@@ -88,15 +88,17 @@ def train(args):
     datamodule = get_datamodule(args.dataset_name, 
                 basepath=args.dataset_basepath,
                 batch_size=args.batch_size, 
-                spectral_average=args.spectral_average)
-
+                spectral_average=args.spectral_average,
+                prep_3dconv=args.prep_3dconv)
 
     ## Model
     model = get_model(args.model_name, 
                 n_channels=datamodule.n_channels, 
                 n_classes=datamodule.n_classes,
+                spatial_size=datamodule.img_shape,
                 ignore_index=datamodule.undef_idx,
-                label_def=datamodule.label_def)
+                label_def=datamodule.label_def,
+                use_entmax15="softmax")
     
     ## Misc
     if args.compile:
@@ -154,6 +156,8 @@ if __name__ == '__main__':
         help=("Applies PCA and reduces data to n PC's (may require some time)."))
     parser.add_argument('--pca-out-dir', type=str,
         help=("Defines path where result of pca should be stored."))
+    parser.add_argument('--prep-3dconv', action='store_true',
+        help=("If set, data is prepared to be used with 3D-convs."))
 
     args = parser.parse_args()
     train(args)
