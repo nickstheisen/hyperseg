@@ -53,7 +53,6 @@ class HSIRoad(pl.LightningDataModule):
         self.c_hist_val = None
         self.c_hist_test = None
 
-        #self.n_channels = 1 if self.spectral_average else 25 
         self.n_classes = 2
         self.undef_idx = -100
 

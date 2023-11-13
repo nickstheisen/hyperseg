@@ -43,7 +43,7 @@ class SemanticSegmentationModule(pl.LightningModule):
     ):
         super(SemanticSegmentationModule, self).__init__(**kwargs)
 
-        self.n_classes = n_classes if (ignore_index < 0) else n_classes + 1
+        self.n_classes = n_classes
         self.n_channels = n_channels
        
         # optimizer

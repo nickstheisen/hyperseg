@@ -126,7 +126,7 @@ class HSIDrive(pl.LightningDataModule):
         self.c_hist_val = None
         self.c_hist_test = None
 
-        self.n_classes = 9 if self.ignore_water else 10
+        self.n_classes = 10 if self.ignore_water else 11
         self.undef_idx = 9 if self.ignore_water else 10
         self.label_def = label_def
 

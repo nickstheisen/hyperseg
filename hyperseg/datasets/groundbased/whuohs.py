@@ -46,11 +46,7 @@ class WHUOHS(pl.LightningDataModule):
         self.transform = transforms.Compose([
                             ToTensor(),
                             PermuteData(new_order=[2,0,1]),
-                            ReplaceLabels({0:24, 24:0}) # move undefined label to the end
                         ])
-        #self.c_hist_train = None
-        #self.c_hist_val = None
-        #self.c_hist_test = None
 
         if spectral_average:
             self.transform = transforms.Compose([
@@ -63,8 +59,8 @@ class WHUOHS(pl.LightningDataModule):
                 InsertEmptyChannelDim(1)
             ])
 
-        self.n_classes = 24
-        self.undef_idx = 24
+        self.n_classes = 25
+        self.undef_idx = 0
         self.label_def = label_def
 
         # statistics (if normalization is activated)

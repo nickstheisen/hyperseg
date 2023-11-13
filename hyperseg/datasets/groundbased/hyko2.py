@@ -12,14 +12,17 @@ class HyKo2(HSDataModule):
             self.transform = transforms.Compose([
                 ToTensor(),
                 PermuteData(new_order=[2,0,1]),
-                ReplaceLabels({0:10, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7, 9:8, 10:9}) # replace undefined label 0 with 10 and then shift labels by one
             ])
+            self.n_classes = 11
+            self.undef_idx=0
+
         elif self.label_set == 'material':
             self.transform = transforms.Compose([
                 ToTensor(),
                 PermuteData(new_order=[2,0,1]),
-                ReplaceLabels({0:8, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7}) # replace undefined label 0 with 8 and then shift labels by one
             ])
+            self.n_classes = 9
+            self.undef_idx=0
 
         else: 
             print('define labelset parameter as either `semantic` or `material`')
@@ -31,9 +34,6 @@ class HyKo2(HSDataModule):
                 SpectralAverage()
             ])
 
-        self.n_classes = 10
-        self.n_channels = 1 if self.spectral_average else 15
-        self.undef_idx=10
 
         dataset = GroundBasedHSDataset(self.filepath, transform=self.transform)
         img,_ = dataset[0]

@@ -27,7 +27,7 @@ class HyperspectralCityV2(HSDataModule):
                 InsertEmptyChannelDim(1)
             ])
 
-        self.n_classes = 19
+        self.n_classes = 20
         self.undef_idx=19
 
         dataset = GroundBasedHSDataset(self.filepath, transform=self.transform)
