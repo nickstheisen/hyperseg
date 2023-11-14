@@ -81,7 +81,7 @@ class HSDataModule(pl.LightningDataModule):
             return None
 
     def setup(self, stage: Optional[str] = None):
-        dataset = GroundBasedHSDataset(self.filepath, transform=self.transform, debug=self.debug)
+        dataset = HSDataset(self.filepath, transform=self.transform, debug=self.debug)
         train_size = round(self.train_prop * len(dataset))
         val_size = round(self.val_prop * len(dataset))
         test_size = len(dataset) - (train_size + val_size)
@@ -131,7 +131,7 @@ class HSDataModule(pl.LightningDataModule):
                 shuffle=False,
                 num_workers=self.num_workers)
 
-class GroundBasedHSDataset(Dataset):
+class HSDataset(Dataset):
 
     def __init__(self, filepath, transform, debug=False):
         self._filepath = filepath

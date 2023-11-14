@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from hyperseg.datasets.groundbased import HSIRoadDataset
-from hyperseg.datasets.groundbased import GroundBasedHSDataset
-from hyperseg.datasets.groundbased import HSIDriveDataset
-from hyperseg.datasets.groundbased import WHUOHSDataset
+from hyperseg.datasets import HSIRoadDataset
+from hyperseg.datasets import HSDataset
+from hyperseg.datasets import HSIDriveDataset
+from hyperseg.datasets import WHUOHSDataset
 
 from hyperseg.datasets.analysis.tools import StatCalculator
-from hyperseg.datasets.groundbased.prep import download_dataset
+from hyperseg.datasets.prep import download_dataset
 
 import torch
 from torchvision import transforms
@@ -41,7 +41,7 @@ transform_hyko = transforms.Compose([
 ])
 
 filepath_hyko = download_dataset('~/data', 'HyKo2-VIS_Semantic')
-hyko = GroundBasedHSDataset(filepath_hyko, transform=transform_hyko)
+hyko = HSDataset(filepath_hyko, transform=transform_hyko)
 
 statcalc_hyko = StatCalculator(hyko, batch_size=16, num_workers=8)
 mean_hyko, var_hyko = statcalc_hyko.getDatasetStats()
@@ -54,7 +54,7 @@ transform_hcv2 = transforms.Compose([
 ])
 
 filepath_hcv2 = '/mnt/data/HyperspectralCityV2_PCA1.h5'
-hcv2 = GroundBasedHSDataset(filepath_hcv2, transform=transform_hcv2)
+hcv2 = HSDataset(filepath_hcv2, transform=transform_hcv2)
 statcalc_hcv2 = StatCalculator(hcv2, batch_size=4, num_workers=4)
 mean_hcv2, var_hcv2 = statcalc_hcv2.getDatasetStats()
 np.savetxt('/mnt/data/dataset-stats/hcv2-stats.txt', 

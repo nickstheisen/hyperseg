@@ -6,10 +6,10 @@ from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary
 from torchsummary import summary
 
-from hyperseg.datasets.datasets import get_datamodule
+from hyperseg.datasets import get_datamodule
 from hyperseg.datasets.callbacks import ExportSplitCallback
 from hyperseg.models.models import get_model
-from hyperseg.datasets.groundbased.prep import apply_pca
+from hyperseg.datasets.prep import apply_pca
 
 from datetime import datetime
 from argparse import ArgumentParser

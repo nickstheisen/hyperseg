@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
 import hyperseg
-from hyperseg.datasets.groundbased import HSIDrive, WHUOHS, HyKo2, HSIRoad, HyperspectralCityV2
+
+from .hsidrive import HSIDrive
+from .whuohs import WHUOHS
+from .hyko2 import HyKo2
+from .hyperspectralcity import HyperspectralCityV2
+from .hsiroad import HSIRoad
 from pathlib import Path
 
 label_def_dir = Path(hyperseg.__file__).parent.joinpath("datasets/labeldefs")

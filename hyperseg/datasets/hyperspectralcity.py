@@ -2,7 +2,7 @@
 
 from torchvision import transforms
 from hyperseg.datasets.transforms import ToTensor, PermuteData, ReplaceLabels, SpectralAverage, InsertEmptyChannelDim
-from .groundbased import HSDataModule, GroundBasedHSDataset
+from .hsdataset import HSDataModule, HSDataset
 
 class HyperspectralCityV2(HSDataModule):
     def __init__(self, half_precision=False, n_pc=None, **kwargs):
@@ -30,7 +30,7 @@ class HyperspectralCityV2(HSDataModule):
         self.n_classes = 20
         self.undef_idx=19
 
-        dataset = GroundBasedHSDataset(self.filepath, transform=self.transform)
+        dataset = HSDataset(self.filepath, transform=self.transform)
         img,_ = dataset[0]
         img = img.squeeze()
         self.img_shape = img.shape[1:]
