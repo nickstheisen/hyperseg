@@ -13,7 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 from hyperseg.datasets.analysis.tools import StatCalculator
-from hyperseg.datasets.transforms import ToTensor, PermuteData, Normalize, ReplaceLabels, SpectralAverage
+from hyperseg.datasets.transforms import ToTensor, PermuteData, Normalize, ReplaceLabels, SpectralAverage, InsertEmptyChannelDim
 
 def get_label_path(path):
         return Path(str(path).replace('image', 'label'))

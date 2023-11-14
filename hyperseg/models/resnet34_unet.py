@@ -9,7 +9,7 @@ import torch.optim as optim
 import torchvision
 from torchvision import models
 
-from ..semsegmodule import SemanticSegmentationModule
+from .semsegmodule import SemanticSegmentationModule
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -76,27 +76,27 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class ResNet18UNet(SemanticSegmentationModule):
+class ResNet34UNet(SemanticSegmentationModule):
     def __init__(self, 
             bilinear : bool = True,
             dim_reduction  : int = None,
             batch_norm : bool = True,
             **kwargs):
-        super(ResNet18UNet, self).__init__(**kwargs)
+        super(ResNet34UNet, self).__init__(**kwargs)
 
         self.save_hyperparameters()
 
-        self.resnet18 = models.resnet18()
-        self.resnet18_layers = list(self.resnet18.children())
+        self.resnet34 = models.resnet34()
+        self.resnet34_layers = list(self.resnet34.children())
 
         self.bilinear = bilinear
         self.dr = dim_reduction
         self.batch_norm = batch_norm
 
-        self.down1 = nn.Sequential(*self.resnet18_layers[3:5]) 
-        self.down2 = nn.Sequential(*self.resnet18_layers[5])
-        self.down3 = nn.Sequential(*self.resnet18_layers[6])
-        self.down4 = nn.Sequential(*self.resnet18_layers[7])
+        self.down1 = nn.Sequential(*self.resnet34_layers[3:5]) 
+        self.down2 = nn.Sequential(*self.resnet34_layers[5])
+        self.down3 = nn.Sequential(*self.resnet34_layers[6])
+        self.down4 = nn.Sequential(*self.resnet34_layers[7])
 
         if self.dr is not None:
             self.dr_layer = torch.nn.Conv2d(self.n_channels, self.dr, 1)

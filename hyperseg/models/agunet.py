@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from ..semsegmodule import SemanticSegmentationModule
+from .semsegmodule import SemanticSegmentationModule
 
 import matplotlib.pyplot as plt
 

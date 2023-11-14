@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from hyperseg.models.imagebased import UNet, AGUNet, SpecTr
+from hyperseg.models import UNet, AGUNet, SpecTr
 
 def replace_if_exists(paramname, defaultval, argdict):
     return argdict[paramname] if (paramname in argdict) else defaultval

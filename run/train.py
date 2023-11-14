@@ -8,7 +8,7 @@ from torchsummary import summary
 
 from hyperseg.datasets import get_datamodule
 from hyperseg.datasets.callbacks import ExportSplitCallback
-from hyperseg.models.models import get_model
+from hyperseg.models import get_model
 from hyperseg.datasets.prep import apply_pca
 
 from datetime import datetime
@@ -21,7 +21,7 @@ valid_models = ['unet', 'agunet', 'spectr']
 
 def make_reproducible(manual_seed=42):
     seed_everything(manual_seed, workers=True)
-    torch.use_deterministic_algorithms(True)
+    torch.use_deterministic_algorithms(True, warn_only=True)
 
 def train(args):
     print(args)
