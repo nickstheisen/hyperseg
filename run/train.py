@@ -82,7 +82,7 @@ def train(cfg):
         callbacks.append(ExportSplitCallback()) # split is already defined in benchmark
 
     ## Data Module
-    if cfg.training.half_precision:
+    if cfg.dataset.half_precision:
         precision="16-mixed"
     else:
         precision=32

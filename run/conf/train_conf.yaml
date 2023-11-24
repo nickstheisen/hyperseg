@@ -1,14 +1,13 @@
 defaults:
+    - _self_
     - dataset: hsidrive
     - model: unet
-    - _self_
 
 model:
     compile: False # not tested yet
 
 training:
     resume_path: null
-    half_precision: False
     max_epochs: 500
     mat_mul_precision: 'high' # can be set to 'medium'|'high'|'highest'
     seed: 42
@@ -29,3 +28,4 @@ dataset:
     num_workers: 8
     prep_3dconv: False
     normalize: False
+    half_precision: False
