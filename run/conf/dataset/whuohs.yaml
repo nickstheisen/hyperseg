@@ -1,0 +1,4 @@
+name: 'whuohs'
+basepath: '/mnt/data/datasets/WHU-OHS'
+batch_size: 16
+label_def: 'whuohs_labeldef.txt'

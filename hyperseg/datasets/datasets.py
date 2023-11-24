@@ -31,18 +31,16 @@ def get_datamodule(cfg):
             prep_3dconv=cfg.prep_3dconv,
             debug=cfg.debug,
         )
-    elif dataset_name == 'whuohs':
+    elif cfg.name == 'whuohs':
         datamodule = WHUOHS(
-            basepath = basepath,
-            batch_size=replace_if_exists("batch_size", 16, kwargs),
-            num_workers = replace_if_exists("num_workers", 8, kwargs),
-            normalize=replace_if_exists("normalize", False, kwargs),
-            label_def=replace_if_exists("label_def", 
-                label_def_dir.joinpath("whuohs_labeldef.txt"),
-                kwargs),
-            spectral_average=replace_if_exists("spectral_average", True, kwargs),
-            prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
-            debug=replace_if_exists("debug", False, kwargs),
+            basepath = cfg.basepath,
+            batch_size=cfg.batch_size,
+            num_workers=cfg.num_workers,
+            normalize=cfg.normalize,
+            label_def=label_def_dir.joinpath(cfg.label_def),
+            spectral_average=cfg.spectral_average,
+            prep_3dconv=cfg.prep_3dconv,
+            debug=cfg.debug,
         )
     elif dataset_name == 'hyko2':
         datamodule = HyKo2(

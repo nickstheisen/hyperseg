@@ -26,4 +26,6 @@ dataset:
     pca: null
     pca_out_dir: '.'
     debug: False # if true the dataset is reduced to 100 samples overall
+    num_workers: 8
     prep_3dconv: False
+    normalize: False

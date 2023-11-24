@@ -1,11 +1,9 @@
 name: 'hsidrive'
 basepath: '/mnt/data/datasets/hsi-drive/Image_dataset'
 batch_size: 32
-num_workers: 8
 train_prop: 0.6
 val_prop: 0.2
 label_def: "hsidrive_labeldef_noWater.txt"
 manual_seed: 42 
 precalc_histograms: False
-normalize: False
 ignore_water: True
