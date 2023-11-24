@@ -21,11 +21,6 @@ class HyperspectralCityV2(HSDataModule):
                 self.transform,
                 SpectralAverage()
             ])
-        if self.prep_3dconv:
-            self.transform = transforms.Compose([
-                self.transform,
-                InsertEmptyChannelDim(1)
-            ])
 
         self.n_classes = 20
         self.undef_idx=19

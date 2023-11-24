@@ -137,11 +137,11 @@ class SpecTr(SemanticSegmentationModule):
             
     def forward(self, x):
         # insert empty channel dimension
+        x = torch.unsqueeze(x, dim=2)
         #print(f"Inputshape: {x.shape}")
         # encoder part
         encoders_features = []
         atts = []
-        #num = len(self.encoders)
         for idx,encoder in enumerate(self.encoders):
             if self.vis:
                 x,att = encoder(x)

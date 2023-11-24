@@ -28,7 +28,6 @@ def get_datamodule(cfg):
             label_def=label_def_dir.joinpath(cfg.label_def),
             spectral_average=cfg.spectral_average,
             ignore_water=cfg.ignore_water,      # water class is ignored 
-            prep_3dconv=cfg.prep_3dconv,
             debug=cfg.debug,
         )
     elif cfg.name == 'whuohs':
@@ -39,7 +38,6 @@ def get_datamodule(cfg):
             normalize=cfg.normalize,
             label_def=label_def_dir.joinpath(cfg.label_def),
             spectral_average=cfg.spectral_average,
-            prep_3dconv=cfg.prep_3dconv,
             debug=cfg.debug,
         )
     elif cfg.name == 'hyko2':
@@ -53,7 +51,6 @@ def get_datamodule(cfg):
             manual_seed=cfg.manual_seed,
             label_def=label_def_dir.joinpath(cfg.label_def),
             spectral_average=cfg.spectral_average,
-            prep_3dconv=cfg.prep_3dconv,
             debug=cfg.debug,
         )
     elif cfg.name == 'hsiroad':
@@ -65,7 +62,6 @@ def get_datamodule(cfg):
             spectral_average=cfg.spectral_average,
             label_def=label_def_dir.joinpath(cfg.label_def),
             manual_seed=cfg.manual_seed,
-            prep_3dconv=cfg.prep_3dconv,
             debug=cfg.debug,
         )
     elif cfg.name == 'hcv2':
@@ -79,7 +75,6 @@ def get_datamodule(cfg):
             half_precision=cfg.half_precision,
             label_def=label_def_dir.joinpath(cfg.label_def),
             spectral_average=cfg.spectral_average,
-            prep_3dconv=cfg.prep_3dconv,
             debug=cfg.debug,
         )
 

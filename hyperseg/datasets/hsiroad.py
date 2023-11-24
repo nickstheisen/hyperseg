@@ -26,7 +26,6 @@ class HSIRoad(pl.LightningDataModule):
             precalc_histograms: bool=False,
             normalize: bool=False,
             spectral_average: bool=False,
-            prep_3dconv:bool=False,
             debug: bool = False,
             ):
         super().__init__()
@@ -38,7 +37,6 @@ class HSIRoad(pl.LightningDataModule):
         self.debug = debug
 
         self.spectral_average = spectral_average
-        self.prep_3dconv = prep_3dconv
         
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -62,12 +60,6 @@ class HSIRoad(pl.LightningDataModule):
                                 self.transform,
                                 SpectralAverage()
                             ])
-
-        if self.prep_3dconv:
-            self.transform = transforms.Compose([
-                self.transform,
-                InsertEmptyChannelDim(1)
-            ])
 
         # statistics (if normalization is activated)
         self.normalize = normalize

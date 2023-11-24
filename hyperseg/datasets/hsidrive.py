@@ -79,7 +79,6 @@ class HSIDrive(pl.LightningDataModule):
         normalize: bool=False,
         spectral_average: bool=False,
         ignore_water:bool=True,
-        prep_3dconv:bool=False,
         debug: bool = False
         ):
         super().__init__()
@@ -94,7 +93,6 @@ class HSIDrive(pl.LightningDataModule):
 
         self.spectral_average = spectral_average
         self.ignore_water = ignore_water
-        self.prep_3dconv = prep_3dconv
         
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -113,12 +111,6 @@ class HSIDrive(pl.LightningDataModule):
                                 self.transform,
                                 SpectralAverage()
                              ])
-        if self.prep_3dconv:
-            self.transform = transforms.Compose([
-                self.transform,
-                InsertEmptyChannelDim(1)
-            ])
-
         
         self.manual_seed = manual_seed
         self.precalc_histograms=precalc_histograms
