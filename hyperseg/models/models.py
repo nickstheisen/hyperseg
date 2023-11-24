@@ -5,32 +5,23 @@ from hyperseg.models import UNet, AGUNet, SpecTr
 def replace_if_exists(paramname, defaultval, argdict):
     return argdict[paramname] if (paramname in argdict) else defaultval
 
-def get_model(
-        model_name,
-        n_channels,
-        n_classes,
-        ignore_index,
-        label_def,
-        **kwargs
-    ):
-    if model_name == 'unet':
+def get_model(cfg):
+    if cfg.name == 'unet':
         model = UNet(
-            n_channels=n_channels,
-            n_classes=n_classes,
-            ignore_index=ignore_index,
-            label_def=label_def,
-            loss_name=replace_if_exists("loss_name", "cross_entropy", kwargs),
-            learning_rate=replace_if_exists("learning_rate", 0.001, kwargs),
-            optimizer_name=replace_if_exists("optimizer_name", "AdamW", kwargs),
-            momentum=replace_if_exists("momentum", 0.0, kwargs),
-            weight_decay=replace_if_exists("weight_decay", 0.0, kwargs),
-            mdmc_average=replace_if_exists("mdmc_average", "samplewise", kwargs),
-            bilinear=replace_if_exists("bilinear", True, kwargs),
-            batch_norm=replace_if_exists("batch_norm", True, kwargs),
-            class_weighting=replace_if_exists("class_weighting", None, kwargs),
-            export_preds_every_n_epochs=replace_if_exists("export_preds_every_n_epochs", 
-                None, 
-                kwargs)
+            n_channels=cfg.n_channels,
+            n_classes=cfg.n_classes,
+            ignore_index=cfg.ignore_index,
+            label_def=cfg.label_def,
+            loss_name=cfg.loss_name,
+            learning_rate=cfg.learning_rate,
+            optimizer_name=cfg.optimizer_name,
+            momentum=cfg.momentum,
+            weight_decay=cfg.weight_decay,
+            mdmc_average=cfg.mdmc_average,
+            bilinear=cfg.bilinear,
+            batch_norm=cfg.batch_norm,
+            class_weighting=cfg.class_weighting,
+            export_preds_every_n_epochs=cfg.export_preds_every_n_epochs,
         )
     elif model_name == 'agunet':
         model = AGUNet(

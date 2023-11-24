@@ -14,28 +14,22 @@ label_def_dir = Path(hyperseg.__file__).parent.joinpath("datasets/labeldefs")
 def replace_if_exists(paramname, defaultval, argdict):
     return argdict[paramname] if (paramname in argdict) else defaultval
 
-def get_datamodule(
-        dataset_name,
-        basepath,
-        **kwargs
-    ):
-    if dataset_name == 'hsidrive':
+def get_datamodule(cfg):
+    if cfg.name == 'hsidrive':
         datamodule = HSIDrive(
-            basepath = basepath,
-            num_workers=replace_if_exists("num_workers", 8, kwargs),
-            batch_size=replace_if_exists("batch_size", 32, kwargs),
-            train_prop=replace_if_exists("train_prop", 0.6, kwargs),
-            val_prop=replace_if_exists("val_prop", 0.2, kwargs),
-            manual_seed=replace_if_exists("manual_seed", 42, kwargs),
-            precalc_histograms=replace_if_exists("precalc_histograms", False, kwargs),
-            normalize=replace_if_exists("normalize", False, kwargs),
-            label_def=replace_if_exists("label_def", 
-                label_def_dir.joinpath("hsidrive_labeldef_noWater.txt"),
-                kwargs),
-            spectral_average=replace_if_exists("spectral_average", True, kwargs),
-            ignore_water=True,      # water class is ignored 
-            prep_3dconv=replace_if_exists("prep_3dconv", False, kwargs),
-            debug=replace_if_exists("debug", False, kwargs),
+            basepath = cfg.basepath,
+            num_workers=cfg.num_workers,
+            batch_size=cfg.batch_size,
+            train_prop=cfg.train_prop,
+            val_prop=cfg.val_prop,
+            manual_seed=cfg.manual_seed,
+            precalc_histograms=cfg.precalc_histograms,
+            normalize=cfg.normalize,
+            label_def=label_def_dir.joinpath(cfg.label_def),
+            spectral_average=cfg.spectral_average,
+            ignore_water=cfg.ignore_water,      # water class is ignored 
+            prep_3dconv=cfg.prep_3dconv,
+            debug=cfg.debug,
         )
     elif dataset_name == 'whuohs':
         datamodule = WHUOHS(

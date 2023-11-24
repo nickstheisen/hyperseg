@@ -1,0 +1,29 @@
+defaults:
+    - dataset: hsidrive
+    - model: unet
+    - _self_
+
+model:
+    compile: False # not tested yet
+
+training:
+    resume_path: null
+    half_precision: False
+    max_epochs: 500
+    mat_mul_precision: 'high' # can be set to 'medium'|'high'|'highest'
+    seed: 42
+    accelerator: 'gpu'
+    devices: [0]
+
+logging:
+    project_name: ??? # required field, must be set by user
+    path: '/mnt/data/logs/'
+    tb_logger: True
+    wb_logger: False
+
+dataset: 
+    spectral_average: False
+    pca: null
+    pca_out_dir: '.'
+    debug: False # if true the dataset is reduced to 100 samples overall
+    prep_3dconv: False
