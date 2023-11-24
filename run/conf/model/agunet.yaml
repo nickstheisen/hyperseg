@@ -1,0 +1,11 @@
+name: agunet
+loss_name: 'cross_entropy'
+learning_rate: 0.001
+optimizer_name: 'AdamW'
+momentum: 0.0
+weight_decay: 0.0
+mdmc_average: "samplewise"
+bilinear: True
+batch_norm: True
+class_weighting: null
+export_preds_every_n_epochs: null
