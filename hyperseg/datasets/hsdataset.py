@@ -137,7 +137,7 @@ class HSDataset(Dataset):
         # if h5file is kept open, the object cannot be pickled and in turn 
         # multi-gpu cannot be used
         h5file = h5py.File(self._filepath, 'r')
-        self.debug = True
+        self.debug = debug
         self._samplelist = list(h5file.keys())
         self._transform = transform
 
