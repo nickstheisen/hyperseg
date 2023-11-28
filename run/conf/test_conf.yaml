@@ -5,6 +5,7 @@ defaults:
 
 model:
     compile: False # not tested yet
+    ckpt: None
 
 training:
     resume_path: null
@@ -18,7 +19,7 @@ logging:
     project_name: ??? # required field, must be set by user
     path: '/mnt/data/logs/'
     tb_logger: True
-    wb_logger: True
+    wb_logger: False
 
 dataset: 
     spectral_average: False

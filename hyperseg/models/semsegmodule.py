@@ -526,7 +526,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             for _, metric in self.test_metrics.items():
                 metric(prediction, labels)
 
-    def on_test_epoch_end(self, outs):
+    def on_test_epoch_end(self):
         if self.export_metrics:
             for name, metric in self.test_metrics.items():
                 if "conf_mat" in name:

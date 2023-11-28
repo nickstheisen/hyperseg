@@ -58,25 +58,7 @@ def get_model(cfg):
             use_entmax15=cfg.use_entmax15,            
         )
 
-    elif model_name == 'ss3fcn':
-        model = SS3FCN(
-            n_channels=n_channels,
-            n_classes=n_classes,
-            label_def=label_def,
-            ignore_index=ignore_index,
-            loss_name=replace_if_exists("loss_name", "cross_entropy", kwargs),
-            learning_rate=replace_if_exists("learning_rate", 0.001, kwargs),
-            optimizer_name=replace_if_exists("optimizer_name", "AdamW", kwargs),
-            momentum=replace_if_exists("momentum", 0.0, kwargs),
-            weight_decay=replace_if_exists("weight_decay", 0.0, kwargs),
-            mdmc_average=replace_if_exists("mdmc_average", "samplewise", kwargs),
-            class_weighting=replace_if_exists("class_weighting", None, kwargs),
-            export_preds_every_n_epochs=replace_if_exists("export_preds_every_n_epochs", 
-                None, 
-                kwargs)
-        )
     else:
-        raise NotImplementedError(f"Model '{model_name}' does not exist.")
+        raise NotImplementedError(f"Model '{cfg.name}' does not exist.")
     
     return model
-
