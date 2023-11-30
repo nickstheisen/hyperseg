@@ -16,11 +16,34 @@ plt.switch_backend('agg')
 
 from typing import Optional
 
+import kornia as K
+from kornia.augmentation import AugmentationSequential, RandomHorizontalFlip
+
 def inv_num_of_samples(histogram):
     return histogram.sum()/histogram
 
 def inv_square_num_of_samples(histogram):
     return histogram.sum()/torch.sqrt(histogram)
+
+class DataAugmentation(nn.Module):
+    def __init__(self, 
+                p_hflip: float,
+                ):
+        super().__init__()
+        # if p(hflip) is basically 0, don't do it
+        self.apply_hflip = True if p_hflip > 1e-5 else False
+
+        self.augment = AugmentationSequential(
+                                RandomHorizontalFlip(p=p_hflip),
+                                data_keys=['input', 'mask'])
+    
+    @torch.no_grad() # disable gradients for efficiency
+    def forward(self, inputs, labels):
+        if self.apply_hflip:
+            labels = torch.unsqueeze(labels, dim=1)
+            inputs, labels = self.augment(inputs, labels.float())
+            labels = labels.squeeze().long()
+        return inputs, labels
 
 class SemanticSegmentationModule(pl.LightningModule):
     
@@ -39,6 +62,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             classification_task: str = "multiclass",
             class_weighting: str = None,
             export_preds_every_n_epochs: int = None,
+            da_hflip: float = 0.0, # Data Augmentation: p(horizontal_flip)
             **kwargs
     ):
         super(SemanticSegmentationModule, self).__init__(**kwargs)
@@ -65,6 +89,9 @@ class SemanticSegmentationModule(pl.LightningModule):
         self.export_metrics = True
         self.mdmc_average = mdmc_average
         self.classification_task = classification_task
+
+        # Augmentation
+        self.augment = DataAugmentation(p_hflip=da_hflip)
         
 
         ## Attention! Unfortunately, metrics must be created as members instead of directly storing
@@ -299,6 +326,7 @@ class SemanticSegmentationModule(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         inputs, labels = train_batch
+        inputs, labels = self.augment(inputs, labels)
         prediction = self.forward(inputs)
         '''
         print("===== IMAGES ====")

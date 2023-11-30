@@ -2,9 +2,6 @@
 
 from hyperseg.models import UNet, AGUNet, SpecTr
 
-def replace_if_exists(paramname, defaultval, argdict):
-    return argdict[paramname] if (paramname in argdict) else defaultval
-
 def get_model(cfg):
     if cfg.name == 'unet':
         model = UNet(
@@ -22,6 +19,8 @@ def get_model(cfg):
             batch_norm=cfg.batch_norm,
             class_weighting=cfg.class_weighting,
             export_preds_every_n_epochs=cfg.export_preds_every_n_epochs,
+            da_hflip=cfg.da_hflip,
+            dropout=cfg.dropout,
         )
     elif cfg.name == 'agunet':
         model = AGUNet(
@@ -39,6 +38,7 @@ def get_model(cfg):
             batch_norm=cfg.batch_norm,
             class_weighting=cfg.class_weighting,
             export_preds_every_n_epochs=cfg.export_preds_every_n_epochs,
+            da_hflip=cfg.da_hflip,
         )
     elif cfg.name == 'spectr':
         model = SpecTr(
@@ -54,6 +54,7 @@ def get_model(cfg):
             mdmc_average=cfg.mdmc_average,
             class_weighting=cfg.class_weighting,
             export_preds_every_n_epochs=cfg.export_preds_every_n_epochs,
+            da_hflip=cfg.da_hflip,
             spatial_size=cfg.spatial_size,
             use_entmax15=cfg.use_entmax15,            
         )

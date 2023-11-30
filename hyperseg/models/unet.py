@@ -38,11 +38,12 @@ class DoubleConv(nn.Module):
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
-    def __init__(self, in_channels, out_channels, batch_norm=True):
+    def __init__(self, in_channels, out_channels, batch_norm=True, dropout=0.0):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            DoubleConv(in_channels, out_channels, batch_norm=batch_norm)
+            nn.Dropout(dropout),
+            DoubleConv(in_channels, out_channels, batch_norm=batch_norm),
         )
 
     def forward(self, x):
@@ -91,6 +92,7 @@ class UNet(SemanticSegmentationModule):
             bilinear : bool = True,
             dim_reduction  : int = None,
             batch_norm : bool = True,
+            dropout: float = 0.0,
             **kwargs):
         super(UNet, self).__init__(**kwargs)
 
@@ -99,6 +101,7 @@ class UNet(SemanticSegmentationModule):
         self.bilinear = bilinear
         self.dr = dim_reduction
         self.batch_norm = batch_norm
+        self.dropout = dropout
 
         if self.dr is not None:
             self.dr_layer = torch.nn.Conv2d(self.n_channels, self.dr, 1)
@@ -109,7 +112,7 @@ class UNet(SemanticSegmentationModule):
         self.down2 = Down(128, 256, batch_norm=self.batch_norm)
         self.down3 = Down(256, 512, batch_norm=self.batch_norm)
         factor = 2 if bilinear else 1
-        self.down4 = Down(512, 1024 // factor, batch_norm=self.batch_norm)
+        self.down4 = Down(512, 1024 // factor, batch_norm=self.batch_norm, dropout=self.dropout)
         self.up1 = Up(1024, 512 // factor, bilinear, batch_norm=self.batch_norm)
         self.up2 = Up(512, 256 // factor, bilinear, batch_norm=self.batch_norm)
         self.up3 = Up(256, 128 // factor, bilinear, batch_norm=self.batch_norm)
