@@ -7,6 +7,7 @@ import torchmetrics
 import torchvision.transforms as T
 
 import pytorch_lightning as pl
+from pytorch_lightning.utilities import grad_norm
 
 from pathlib import Path
 import numpy as np
@@ -424,6 +425,10 @@ class SemanticSegmentationModule(pl.LightningModule):
 #                else:
 #                    self.log(name, metric.compute())
 #                metric.reset()
+
+    def on_before_optimizer_step(self, optimizer):
+        norms = grad_norm(self, norm_type=2)
+        self.log_dict(norms)
 
     def on_train_epoch_end(self):
         if self.export_metrics:
