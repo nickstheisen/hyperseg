@@ -8,6 +8,7 @@ from torchsummary import summary
 
 import hydra
 from omegaconf import DictConfig, OmegaConf, open_dict
+import wandb
 
 from hyperseg.datasets import get_datamodule
 from hyperseg.datasets.callbacks import ExportSplitCallback
@@ -61,6 +62,7 @@ def train(cfg):
         ))
 
     if cfg.logging.wb_logger:
+        wandb.finish()
         loggers.append(pl_loggers.WandbLogger(
                 name=f"{cfg.model.name}-{ts}",
                 project=f"{cfg.logging.project_name}-{cfg.dataset.name}",
