@@ -43,7 +43,7 @@ class DataAugmentation(nn.Module):
         if self.apply_hflip:
             labels = torch.unsqueeze(labels, dim=1)
             inputs, labels = self.augment(inputs, labels.float())
-            labels = labels.squeeze().long()
+            labels = labels.squeeze(dim=1).long()
         return inputs, labels
 
 class SemanticSegmentationModule(pl.LightningModule):
@@ -329,44 +329,13 @@ class SemanticSegmentationModule(pl.LightningModule):
         inputs, labels = train_batch
         inputs, labels = self.augment(inputs, labels)
         prediction = self.forward(inputs)
-        '''
-        print("===== IMAGES ====")
-        print(inputs.dtype)
-        print(inputs.element_size())
-        print(inputs.nelement())
-        print(inputs.element_size()*inputs.nelement())
-        print("===== LABELS ====")        
-        print(labels.dtype)
-        print(labels.element_size())
-        print(labels.nelement())
-        print(labels.element_size()*labels.nelement())
-        '''
-
-        # convert prediction to same shape as ground-truth labels
-        # (? pretty sure this is what happens, but I should have
-        #  added a comment in the first place)
-        #prediction =  T.Resize((labels.shape[1:3]))(prediction)
-        '''
-        print("===== prediction ====")        
-        print(prediction.dtype)
-        print(prediction.element_size())
-        print(prediction.nelement())
-        print(prediction.element_size()*prediction.nelement())
-        '''
-
+        
         loss = self.criterion(prediction, labels.squeeze(dim=1)) 
 
         # built-in reduction='mean' with CrossEntropyLoss is non-deterministic
         # on GPU so we do it manually
         # see: https://discuss.pytorch.org/t/pytorchs-non-deterministic-cross-entropy-loss-and-the-problem-of-reproducibility/172180/8
         loss = loss.mean()         
-        '''
-        print("===== loss ====")        
-        print(loss.dtype)
-        print(loss.element_size())
-        print(loss.nelement())
-        print(loss.element_size()*loss.nelement())
-        '''
 
         if self.export_metrics:
             prediction = prediction.argmax(dim=1, keepdims=True)
@@ -377,54 +346,6 @@ class SemanticSegmentationModule(pl.LightningModule):
         self.log('train_loss_step', loss)
         return loss
 
-#### TODO: Extract metric export to own function that can be called from 
-#### hooks, e.g. training_epoch_end(..)    
-#    def _export_metrics(self, metrics, mode):
-#            if mode == 'train':
-#                log_prefix = 'Train'
-#            elif mode == 'validation':
-#                log_prefix = 'Validation'
-#            elif mode == 'test':
-#                log_prefix = 'Test'
-#            else:
-#                raise ValueError(
-#                    f"Illegal `mode` parameter: {mode}."
-#                    " Only `train`, `test` or `validation` are valid.")
-#            for name, metric in metrics.items():
-#                if "conf_mat" in name:
-#                    confmat_epoch = metric.compute()
-#
-#                    # plot confusion_matrix
-#                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(int)
-#                    confmat_logpath = self.confmat_log_dir.joinpath(
-#                            f'confmat_train_epoch{self.current_epoch}.csv')
-#                    self._export_confmat(confmat_logpath, confmat_epoch)
-#                    self.logger.experiment.add_figure(f"{log_prefix}/confusion-matrix", 
-#                            self._plot_confmat(confmat_epoch),
-#                            self.current_epoch)
-#                    self.logger.experiment.add_figure("Train/log-confusion-matrix",
-#                            self._plot_log_confmat(confmat_epoch),
-#                            self.current_epoch)
-#                elif "class" in name:
-#                    # actually compute score from logs
-#                    score_epoch = metric.compute()
-#                    
-#                    # detach from graph, retrieve from gpu-memory, convert to numpy array
-#                    score_epoch = score_epoch.detach().cpu().numpy()
-#
-#                    # extract metric name (remove 'Validation/','Train/','Test/' and replace spaces)
-#                    metric_name = name.split('/')[1].replace(' ', '_')
-#
-#                    # export and plot classwise scores
-#                    score_logpath = self.classmetric_log_dir.joinpath(
-#                            f'{metric_name}_train_epoch{self.current_epoch}.csv')
-#                    self._export_classmetric(score_logpath, score_epoch)
-#                    self.logger.experiment.add_figure(f"Train/{metric_name}",
-#                            self._plot_classmetric(score_epoch),
-#                            self.current_epoch)
-#                else:
-#                    self.log(name, metric.compute())
-#                metric.reset()
 
     def on_before_optimizer_step(self, optimizer):
         norms = grad_norm(self, norm_type=2)
