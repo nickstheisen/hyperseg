@@ -4,6 +4,7 @@ import torch
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torchsummary import summary
 
 import hydra
@@ -82,6 +83,15 @@ def train(cfg):
     callbacks.append(ModelSummary())
     if cfg.dataset.name not in ['whuohs']:
         callbacks.append(ExportSplitCallback()) # split is already defined in benchmark
+
+    if cfg.training.early_stopping:
+        callbacks.append(
+            EarlyStopping(
+                monitor="Validation/jaccard",
+                patience=50,
+                mode="max"
+            )
+        )
 
     ## Data Module
     if cfg.dataset.half_precision:

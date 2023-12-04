@@ -15,6 +15,7 @@ training:
     seed: 42
     accelerator: 'gpu'
     devices: [0]
+    early_stopping: False
 
 logging:
     project_name: ??? # required field, must be set by user
