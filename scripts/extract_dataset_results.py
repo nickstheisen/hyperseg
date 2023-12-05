@@ -47,6 +47,8 @@ def tflog_to_pandas(path):
         for tag in tags:
             if tag in ["hp_metric","train_loss_step"]:
                 continue
+            if "grad_2.0_norm" in tag:
+                continue
             event_list = event_acc.Scalars(tag)
             values = list(map(lambda x: x.value, event_list))
             step = list(map(lambda x: x.step, event_list))
@@ -95,6 +97,7 @@ def tflog_to_pandas(path):
     # for some reason without ignoring the epoch tag there are duplicate entries with NaN values,
     # so for now just remove those
     df = df.dropna(axis=0, how="any")
+    print(df)
     return df
 
 
