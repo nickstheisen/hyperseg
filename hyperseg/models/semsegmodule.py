@@ -58,7 +58,6 @@ class SemanticSegmentationModule(pl.LightningModule):
             momentum: float,
             weight_decay: float,
             ignore_index: int,
-            mdmc_average: str,
             optimizer_eps: int = 1e-08,
             classification_task: str = "multiclass",
             class_weighting: str = None,
@@ -88,7 +87,6 @@ class SemanticSegmentationModule(pl.LightningModule):
 
         # metrics
         self.export_metrics = True
-        self.mdmc_average = mdmc_average
         self.classification_task = classification_task
 
         # Augmentation
@@ -106,35 +104,30 @@ class SemanticSegmentationModule(pl.LightningModule):
                 task=self.classification_task,
                 num_classes=self.n_classes, 
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='micro')
         self.train_metrics["Train/accuracy-micro"] = self.acc_train_micro
         self.acc_train_macro = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/accuracy-macro"] = self.acc_train_macro
         self.acc_train_class = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.train_metrics["Train/accuracy-class"] = self.acc_train_class
         self.f1_train_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/f1-macro"] = self.f1_train_macro
         self.f1_train_class = torchmetrics.F1Score(
                 task=self.classification_task,
                  num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.train_metrics["Train/f1-class"] = self.f1_train_class
         self.jaccard_train = torchmetrics.JaccardIndex(
@@ -160,35 +153,30 @@ class SemanticSegmentationModule(pl.LightningModule):
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='micro')
         self.val_metrics["Validation/accuracy-micro"] = self.acc_val_micro
         self.acc_val_macro = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/accuracy-macro"] = self.acc_val_macro
         self.acc_val_class = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.val_metrics["Validation/accuracy-class"] = self.acc_val_class
         self.f1_val_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/f1-macro"] = self.f1_val_macro
         self.f1_val_class = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.val_metrics["Validation/f1-class"] = self.f1_val_class
         self.jaccard_val = torchmetrics.JaccardIndex(
@@ -214,35 +202,30 @@ class SemanticSegmentationModule(pl.LightningModule):
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='micro')
         self.test_metrics["Test/accuracy-micro"] = self.acc_test_micro
         self.acc_test_macro = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/accuracy-macro"] = self.acc_test_macro
         self.acc_test_class = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.test_metrics["Test/accuracy-class"] = self.acc_test_class
         self.f1_test_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/f1-macro"] = self.f1_test_macro
         self.f1_test_class = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.test_metrics["Test/f1-class"] = self.f1_test_class
         self.jaccard_test = torchmetrics.JaccardIndex(
