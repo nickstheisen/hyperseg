@@ -5,11 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
-import torchvision
-from torchvision import models
-
-from ..semsegmodule import SemanticSegmentationModule
+from .semsegmodule import SemanticSegmentationModule
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -37,6 +33,21 @@ class DoubleConv(nn.Module):
 
     def forward(self, x):
         return self.double_conv(x)
+
+
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv"""
+
+    def __init__(self, in_channels, out_channels, batch_norm=True, dropout=0.0):
+        super().__init__()
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool2d(2),
+            nn.Dropout(dropout),
+            DoubleConv(in_channels, out_channels, batch_norm=batch_norm),
+        )
+
+    def forward(self, x):
+        return self.maxpool_conv(x)
 
 
 class Up(nn.Module):
@@ -76,48 +87,46 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class ResNet34UNet(SemanticSegmentationModule):
+class UNet(SemanticSegmentationModule):
     def __init__(self, 
             bilinear : bool = True,
             dim_reduction  : int = None,
             batch_norm : bool = True,
+            dropout: float = 0.0,
             **kwargs):
-        super(ResNet34UNet, self).__init__(**kwargs)
+        super(UNet, self).__init__(**kwargs)
 
         self.save_hyperparameters()
-
-        self.resnet34 = models.resnet34()
-        self.resnet34_layers = list(self.resnet34.children())
 
         self.bilinear = bilinear
         self.dr = dim_reduction
         self.batch_norm = batch_norm
-
-        self.down1 = nn.Sequential(*self.resnet34_layers[3:5]) 
-        self.down2 = nn.Sequential(*self.resnet34_layers[5])
-        self.down3 = nn.Sequential(*self.resnet34_layers[6])
-        self.down4 = nn.Sequential(*self.resnet34_layers[7])
+        self.dropout = dropout
 
         if self.dr is not None:
             self.dr_layer = torch.nn.Conv2d(self.n_channels, self.dr, 1)
             self.inc = DoubleConv(self.dr, 64, batch_norm=batch_norm)
         else :
             self.inc = DoubleConv(self.n_channels, 64, batch_norm=self.batch_norm)
+        self.down1 = Down(64, 128, batch_norm=self.batch_norm)
+        self.down2 = Down(128, 256, batch_norm=self.batch_norm)
+        self.down3 = Down(256, 512, batch_norm=self.batch_norm)
         factor = 2 if bilinear else 1
-        self.up1 = Up(512 + 256, 512 // factor, bilinear, batch_norm=self.batch_norm)
-        self.up2 = Up(256 + 128, 256 // factor, bilinear, batch_norm=self.batch_norm)
-        self.up3 = Up(128 + 64, 128 // factor, bilinear, batch_norm=self.batch_norm)
-        self.up4 = Up(64 + 64, 64, bilinear, batch_norm=self.batch_norm)
+        self.down4 = Down(512, 1024 // factor, batch_norm=self.batch_norm, dropout=self.dropout)
+        self.up1 = Up(1024, 512 // factor, bilinear, batch_norm=self.batch_norm)
+        self.up2 = Up(512, 256 // factor, bilinear, batch_norm=self.batch_norm)
+        self.up3 = Up(256, 128 // factor, bilinear, batch_norm=self.batch_norm)
+        self.up4 = Up(128, 64, bilinear, batch_norm=self.batch_norm)
         self.outc = OutConv(64, self.n_classes)
 
     def forward(self, x):
         if self.dr is not None:
             x = self.dr_layer(x)
         x1 = self.inc(x)
-        x2 = self.down1(x1) # x2 has 64 channels
-        x3 = self.down2(x2) # x3 has 128 channels
-        x4 = self.down3(x3) # x4 has 256 channels
-        x5 = self.down4(x4) # x5 has 512 channels
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
         x = self.up3(x, x2)

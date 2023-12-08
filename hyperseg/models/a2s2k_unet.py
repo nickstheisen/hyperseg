@@ -86,25 +86,57 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class UNet(SemanticSegmentationModule):
+class A2S2KUNet(SemanticSegmentationModule):
     def __init__(self, 
             bilinear : bool = True,
-            dim_reduction  : int = None,
+            a2s2k_out_size : int = 24,
             batch_norm : bool = True,
+            se_reduction : int = 2,
             **kwargs):
-        super(UNet, self).__init__(**kwargs)
+        super(A2S2KUNet, self).__init__(**kwargs)
 
         self.save_hyperparameters()
 
         self.bilinear = bilinear
-        self.dr = dim_reduction
         self.batch_norm = batch_norm
+        self.a2s2k_out_size = a2s2k_out_size
+        self.se_reduction = se_reduction
 
-        if self.dr is not None:
-            self.dr_layer = torch.nn.Conv2d(self.n_channels, self.dr, 1)
-            self.inc = DoubleConv(self.dr, 64, batch_norm=batch_norm)
-        else :
-            self.inc = DoubleConv(self.n_channels, 64, batch_norm=self.batch_norm)
+        # a2s2k layers
+        self.conv1x1 = nn.Conv3d(
+            in_channels=1,
+            out_channels=self.a2s2k_out_size,
+            kernel_size=(7,1,1),
+            stride=(2,1,1),
+            padding=0
+        )
+        self.bn1x1 = nn.Sequential(
+            nn.BatchNorm3d(
+                self.a2s2k_out_size, eps=0.001, momentum=0.1, affine=True
+            ),
+            nn.ReLU(inplace=True)
+        )
+
+        self.conv3x3 = nn.Conv3d(
+            in_channels = 1,
+            out_channels=self.a2s2k_out_size,
+            kernel_size=(7,3,3),
+            stride=(2,1,1),
+            padding=(0,1,1)
+        )
+        self.bn3x3 = nn.Sequential(
+            nn.BatchNorm3d(
+                self.a2s2k_out_size, eps=0.001, momentum=0.1, affine=True
+            ),
+            nn.ReLU(inplace=True)
+        )
+        self.pool = nn.AdaptiveAvgPool3d(1)
+        # TODO: Code from official repo does not match the formalization in paper
+        # find out whats correct
+        # TODO: reduce the feature channel dimension with 1DConv to get the original 
+        # tensor shape (necessary to plug in front of UNet)
+                
+        # UNet layers
         self.down1 = Down(64, 128, batch_norm=self.batch_norm)
         self.down2 = Down(128, 256, batch_norm=self.batch_norm)
         self.down3 = Down(256, 512, batch_norm=self.batch_norm)
@@ -115,10 +147,31 @@ class UNet(SemanticSegmentationModule):
         self.up3 = Up(256, 128 // factor, bilinear, batch_norm=self.batch_norm)
         self.up4 = Up(128, 64, bilinear, batch_norm=self.batch_norm)
         self.outc = OutConv(64, self.n_classes)
+        
 
     def forward(self, x):
-        if self.dr is not None:
-            x = self.dr_layer(x)
+        # A2S2K-Module
+        ## kernel split
+        print(f"shape(x)={x.shape}")
+        # additional dimension required for 3d-conv
+        x = x.unsqueeze(dim=1)
+        print(f"shape(x_unsqueezed)={x.shape}")
+        x_spec = self.conv1x1(x)
+        x_spec = self.bn1x1(x_spec).unsqueeze(dim=1)
+        print(f"shape(x_spec)={x_spec.shape}")
+
+        x_spat = self.conv3x3(x)
+        x_spat = self.bn3x3(x_spat).unsqueeze(dim=1)
+        print(f"shape(x_spat)={x_spat.shape}")
+        
+        ## Fusion
+        x_fused = torch.cat([x_spec, x_spat], dim=1)
+        x_fused = torch.sum(x_fused, dim=1) # elementwise addition of spectral + spatial features
+        x_fused = self.pool(x_fused)
+        x_fused = 
+        print(f"shape(x_fused)={x_fused.shape}")
+        
+        # UNet
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)

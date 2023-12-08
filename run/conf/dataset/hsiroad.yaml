@@ -1,0 +1,6 @@
+name: 'hsiroad'
+basepath: '/mnt/data/datasets/hsi_road/hsi_road'
+sensortype: 'nir'
+batch_size: 32
+label_def: 'hsi-road_labeldef.txt'
+manual_seed: 42

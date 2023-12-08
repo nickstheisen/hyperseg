@@ -1,0 +1,10 @@
+name: 'spectr'
+loss_name: 'cross_entropy'
+learning_rate: 0.001
+optimizer_name: 'AdamW'
+momentum: 0.0
+weight_decay: 0.0
+batch_norm: True
+class_weighting: null
+export_preds_every_n_epochs: null
+use_entmax15: 'adaptive_entmax'

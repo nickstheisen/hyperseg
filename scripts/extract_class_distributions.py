@@ -2,7 +2,7 @@
 
 from hyperseg.datasets.analysis.tools import ClassDistributionExtractor
 from hyperseg.datasets.transforms import ToTensor, PermuteData, ReplaceLabels
-from hyperseg.datasets.groundbased import WHUOHSDataset
+from hyperseg.datasets import WHUOHSDataset
 
 from torchvision import transforms
 from argparse import ArgumentParser

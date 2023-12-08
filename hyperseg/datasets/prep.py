@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+
 import numpy as np
 from tqdm import tqdm
 import h5py
@@ -10,6 +11,7 @@ import sys
 from sklearn.decomposition import PCA
 
 from hyperseg.datasets.utils import TqdmUpTo
+
 
 DATASETS_CONFIG = {
         'HyKo2-VIS': {
@@ -117,4 +119,3 @@ def apply_pca(n_components, origin_path, target_path):
                 
                 # update progress bar
                 pbar.update(1)
-

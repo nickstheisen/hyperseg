@@ -22,9 +22,11 @@ class HSIRoad(pl.LightningDataModule):
             batch_size: int,
             num_workers: int,
             label_def: str,
+            manual_seed: int=None,
             precalc_histograms: bool=False,
             normalize: bool=False,
             spectral_average: bool=False,
+            debug: bool = False,
             ):
         super().__init__()
         
@@ -32,12 +34,14 @@ class HSIRoad(pl.LightningDataModule):
 
         self.basepath = Path(basepath)
         self.sensortype = sensortype
+        self.debug = debug
 
         self.spectral_average = spectral_average
         
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.label_def = label_def
+        self.manual_seed = manual_seed
 
         self.transform = transforms.Compose([
                             ToTensor()
@@ -47,7 +51,6 @@ class HSIRoad(pl.LightningDataModule):
         self.c_hist_val = None
         self.c_hist_test = None
 
-        self.n_channels = 1 if self.spectral_average else 25 
         self.n_classes = 2
         self.undef_idx = -100
 
@@ -58,12 +61,22 @@ class HSIRoad(pl.LightningDataModule):
                                 SpectralAverage()
                             ])
 
-
         # statistics (if normalization is activated)
         self.normalize = normalize
         self.means = None
         self.stds = None
-       
+
+        # read dimensions from image
+        dataset = HSIRoadDataset(data_dir=self.basepath,
+                    collection=self.sensortype,
+                    transform=self.transform,
+                    mode='train',
+                    debug=self.debug)
+        img, _ = dataset[0]
+        img = img.squeeze()
+        self.img_shape = img.shape[1:]
+        self.n_channels = img.shape[0]
+      
     def class_histograms(self):
         if self.c_hist_train is not None :
             return (self.c_hist_train, self.c_hist_val, self.c_hist_test)
@@ -75,13 +88,15 @@ class HSIRoad(pl.LightningDataModule):
                                 data_dir=self.basepath,
                                 collection=self.sensortype,
                                 transform=self.transform,
-                                mode='train')
+                                mode='train',
+                                debug=self.debug)
 
         self.dataset_val = HSIRoadDataset(                                
                                 data_dir=self.basepath, 
                                 collection=self.sensortype, 
                                 transform=self.transform,
-                                mode='val')
+                                mode='val',
+                                debug=self.debug)
         if self.precalc_histograms:
             self.c_hist_train = label_histogram(
                     self.dataset_train, self.n_classes)
@@ -153,10 +168,11 @@ class HSIRoadDataset(Dataset):
     CLASSES = ('background', 'road')
     COLLECTION = ('rgb', 'vis', 'nir')
 
-    def __init__(self, data_dir, collection, transform, classes=('background', 'road'), mode='train'):
+    def __init__(self, data_dir, collection, transform, classes=('background', 'road'), mode='train', debug=False):
         # 0 is background and 1 is road
         self.data_dir = data_dir
         self.collection = collection.lower()
+        self.debug=debug
         
         # mode == 'train' || mode == 'validation''
         path = os.path.join(data_dir, 'train.txt' if mode == 'train' else 'valid.txt')
@@ -165,6 +181,15 @@ class HSIRoadDataset(Dataset):
             path = os.path.join(data_dir, 'all.txt')
 
         self.name_list = np.genfromtxt(path, dtype='str')
+        
+        if self.debug:
+            if mode =='train':
+                self.name_list = self.name_list[:60]
+            elif mode == 'val':
+                self.name_list = self.name_list[:40]
+            elif mode == 'full':
+                self.name_list = self.name_list[:100]
+
         self.classes = [self.CLASSES.index(cls.lower()) for cls in classes]
         self._transform = transform
 

@@ -9,7 +9,7 @@ import torch.optim as optim
 import torchvision
 from torchvision import models
 
-from ..semsegmodule import SemanticSegmentationModule
+from .semsegmodule import SemanticSegmentationModule
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""

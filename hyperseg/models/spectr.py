@@ -7,10 +7,10 @@ Based on: https://github.com/boxiangyun/SpecTr
 
 import torch.nn as nn
 import torch
-from .block_3d import (Decoder,DoubleConv,AdaptivePool_Encoder,
+from .modules.block_3d import (Decoder,DoubleConv,AdaptivePool_Encoder,
                       Trans_block)
                      
-from ..semsegmodule import SemanticSegmentationModule
+from .semsegmodule import SemanticSegmentationModule
 
 def number_of_features_per_level(init_channel_number, num_levels):
     return [init_channel_number * 2 ** k for k in range(num_levels)]
@@ -137,11 +137,11 @@ class SpecTr(SemanticSegmentationModule):
             
     def forward(self, x):
         # insert empty channel dimension
+        x = torch.unsqueeze(x, dim=2)
         #print(f"Inputshape: {x.shape}")
         # encoder part
         encoders_features = []
         atts = []
-        #num = len(self.encoders)
         for idx,encoder in enumerate(self.encoders):
             if self.vis:
                 x,att = encoder(x)

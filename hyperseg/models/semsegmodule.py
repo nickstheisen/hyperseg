@@ -7,6 +7,7 @@ import torchmetrics
 import torchvision.transforms as T
 
 import pytorch_lightning as pl
+from pytorch_lightning.utilities import grad_norm
 
 from pathlib import Path
 import numpy as np
@@ -16,11 +17,34 @@ plt.switch_backend('agg')
 
 from typing import Optional
 
+import kornia as K
+from kornia.augmentation import AugmentationSequential, RandomHorizontalFlip
+
 def inv_num_of_samples(histogram):
     return histogram.sum()/histogram
 
 def inv_square_num_of_samples(histogram):
     return histogram.sum()/torch.sqrt(histogram)
+
+class DataAugmentation(nn.Module):
+    def __init__(self, 
+                p_hflip: float,
+                ):
+        super().__init__()
+        # if p(hflip) is basically 0, don't do it
+        self.apply_hflip = True if p_hflip > 1e-5 else False
+
+        self.augment = AugmentationSequential(
+                                RandomHorizontalFlip(p=p_hflip),
+                                data_keys=['input', 'mask'])
+    
+    @torch.no_grad() # disable gradients for efficiency
+    def forward(self, inputs, labels):
+        if self.apply_hflip:
+            labels = torch.unsqueeze(labels, dim=1)
+            inputs, labels = self.augment(inputs, labels.float())
+            labels = labels.squeeze(dim=1).long()
+        return inputs, labels
 
 class SemanticSegmentationModule(pl.LightningModule):
     
@@ -34,16 +58,16 @@ class SemanticSegmentationModule(pl.LightningModule):
             momentum: float,
             weight_decay: float,
             ignore_index: int,
-            mdmc_average: str,
             optimizer_eps: int = 1e-08,
             classification_task: str = "multiclass",
             class_weighting: str = None,
             export_preds_every_n_epochs: int = None,
+            da_hflip: float = 0.0, # Data Augmentation: p(horizontal_flip)
             **kwargs
     ):
         super(SemanticSegmentationModule, self).__init__(**kwargs)
 
-        self.n_classes = n_classes if (ignore_index < 0) else n_classes + 1
+        self.n_classes = n_classes
         self.n_channels = n_channels
        
         # optimizer
@@ -63,8 +87,10 @@ class SemanticSegmentationModule(pl.LightningModule):
 
         # metrics
         self.export_metrics = True
-        self.mdmc_average = mdmc_average
         self.classification_task = classification_task
+
+        # Augmentation
+        self.augment = DataAugmentation(p_hflip=da_hflip)
         
 
         ## Attention! Unfortunately, metrics must be created as members instead of directly storing
@@ -78,42 +104,30 @@ class SemanticSegmentationModule(pl.LightningModule):
                 task=self.classification_task,
                 num_classes=self.n_classes, 
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='micro')
         self.train_metrics["Train/accuracy-micro"] = self.acc_train_micro
         self.acc_train_macro = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/accuracy-macro"] = self.acc_train_macro
         self.acc_train_class = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.train_metrics["Train/accuracy-class"] = self.acc_train_class
-        self.f1_train_micro = torchmetrics.F1Score(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
-                average='micro')
-        self.train_metrics["Train/f1-micro"] = self.f1_train_micro
         self.f1_train_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.train_metrics["Train/f1-macro"] = self.f1_train_macro
         self.f1_train_class = torchmetrics.F1Score(
                 task=self.classification_task,
                  num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.train_metrics["Train/f1-class"] = self.f1_train_class
         self.jaccard_train = torchmetrics.JaccardIndex(
@@ -139,42 +153,30 @@ class SemanticSegmentationModule(pl.LightningModule):
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='micro')
         self.val_metrics["Validation/accuracy-micro"] = self.acc_val_micro
         self.acc_val_macro = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/accuracy-macro"] = self.acc_val_macro
         self.acc_val_class = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.val_metrics["Validation/accuracy-class"] = self.acc_val_class
-        self.f1_val_micro = torchmetrics.F1Score(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
-                average='micro')
-        self.val_metrics["Validation/f1-micro"] = self.f1_val_micro
         self.f1_val_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.val_metrics["Validation/f1-macro"] = self.f1_val_macro
         self.f1_val_class = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.val_metrics["Validation/f1-class"] = self.f1_val_class
         self.jaccard_val = torchmetrics.JaccardIndex(
@@ -200,42 +202,30 @@ class SemanticSegmentationModule(pl.LightningModule):
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='micro')
         self.test_metrics["Test/accuracy-micro"] = self.acc_test_micro
         self.acc_test_macro = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/accuracy-macro"] = self.acc_test_macro
         self.acc_test_class = torchmetrics.Accuracy(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.test_metrics["Test/accuracy-class"] = self.acc_test_class
-        self.f1_test_micro = torchmetrics.F1Score(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
-                average='micro')
-        self.test_metrics["Test/f1-micro"] = self.f1_test_micro
         self.f1_test_macro = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='macro')
         self.test_metrics["Test/f1-macro"] = self.f1_test_macro
         self.f1_test_class = torchmetrics.F1Score(
                 task=self.classification_task,
                 num_classes=self.n_classes,
                 ignore_index=self.ignore_index, 
-                mdmc_average=self.mdmc_average, 
                 average='none')
         self.test_metrics["Test/f1-class"] = self.f1_test_class
         self.jaccard_test = torchmetrics.JaccardIndex(
@@ -271,7 +261,8 @@ class SemanticSegmentationModule(pl.LightningModule):
         if self.loss_name == 'cross_entropy':
             self.criterion = nn.CrossEntropyLoss(
                     ignore_index=self.ignore_index,
-                    weight=self.class_weights)
+                    weight=self.class_weights,
+                    reduction='none')
         else : 
             raise RuntimeError(f'Loss function "{self.loss_name}" is not available '
                     'or is not implemented yet')
@@ -319,40 +310,15 @@ class SemanticSegmentationModule(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         inputs, labels = train_batch
+        inputs, labels = self.augment(inputs, labels)
         prediction = self.forward(inputs)
-        '''
-        print("===== IMAGES ====")
-        print(inputs.dtype)
-        print(inputs.element_size())
-        print(inputs.nelement())
-        print(inputs.element_size()*inputs.nelement())
-        print("===== LABELS ====")        
-        print(labels.dtype)
-        print(labels.element_size())
-        print(labels.nelement())
-        print(labels.element_size()*labels.nelement())
-        '''
-
-        # convert prediction to same shape as ground-truth labels
-        # (? pretty sure this is what happens, but I should have
-        #  added a comment in the first place)
-        #prediction =  T.Resize((labels.shape[1:3]))(prediction)
-        '''
-        print("===== prediction ====")        
-        print(prediction.dtype)
-        print(prediction.element_size())
-        print(prediction.nelement())
-        print(prediction.element_size()*prediction.nelement())
-        '''
-
+        
         loss = self.criterion(prediction, labels.squeeze(dim=1)) 
-        '''
-        print("===== loss ====")        
-        print(loss.dtype)
-        print(loss.element_size())
-        print(loss.nelement())
-        print(loss.element_size()*loss.nelement())
-        '''
+
+        # built-in reduction='mean' with CrossEntropyLoss is non-deterministic
+        # on GPU so we do it manually
+        # see: https://discuss.pytorch.org/t/pytorchs-non-deterministic-cross-entropy-loss-and-the-problem-of-reproducibility/172180/8
+        loss = loss.mean()         
 
         if self.export_metrics:
             prediction = prediction.argmax(dim=1, keepdims=True)
@@ -363,54 +329,10 @@ class SemanticSegmentationModule(pl.LightningModule):
         self.log('train_loss_step', loss)
         return loss
 
-#### TODO: Extract metric export to own function that can be called from 
-#### hooks, e.g. training_epoch_end(..)    
-#    def _export_metrics(self, metrics, mode):
-#            if mode == 'train':
-#                log_prefix = 'Train'
-#            elif mode == 'validation':
-#                log_prefix = 'Validation'
-#            elif mode == 'test':
-#                log_prefix = 'Test'
-#            else:
-#                raise ValueError(
-#                    f"Illegal `mode` parameter: {mode}."
-#                    " Only `train`, `test` or `validation` are valid.")
-#            for name, metric in metrics.items():
-#                if "conf_mat" in name:
-#                    confmat_epoch = metric.compute()
-#
-#                    # plot confusion_matrix
-#                    confmat_epoch = confmat_epoch.detach().cpu().numpy().astype(int)
-#                    confmat_logpath = self.confmat_log_dir.joinpath(
-#                            f'confmat_train_epoch{self.current_epoch}.csv')
-#                    self._export_confmat(confmat_logpath, confmat_epoch)
-#                    self.logger.experiment.add_figure(f"{log_prefix}/confusion-matrix", 
-#                            self._plot_confmat(confmat_epoch),
-#                            self.current_epoch)
-#                    self.logger.experiment.add_figure("Train/log-confusion-matrix",
-#                            self._plot_log_confmat(confmat_epoch),
-#                            self.current_epoch)
-#                elif "class" in name:
-#                    # actually compute score from logs
-#                    score_epoch = metric.compute()
-#                    
-#                    # detach from graph, retrieve from gpu-memory, convert to numpy array
-#                    score_epoch = score_epoch.detach().cpu().numpy()
-#
-#                    # extract metric name (remove 'Validation/','Train/','Test/' and replace spaces)
-#                    metric_name = name.split('/')[1].replace(' ', '_')
-#
-#                    # export and plot classwise scores
-#                    score_logpath = self.classmetric_log_dir.joinpath(
-#                            f'{metric_name}_train_epoch{self.current_epoch}.csv')
-#                    self._export_classmetric(score_logpath, score_epoch)
-#                    self.logger.experiment.add_figure(f"Train/{metric_name}",
-#                            self._plot_classmetric(score_epoch),
-#                            self.current_epoch)
-#                else:
-#                    self.log(name, metric.compute())
-#                metric.reset()
+
+    def on_before_optimizer_step(self, optimizer):
+        norms = grad_norm(self, norm_type=2)
+        self.log_dict(norms)
 
     def on_train_epoch_end(self):
         if self.export_metrics:
@@ -541,7 +463,7 @@ class SemanticSegmentationModule(pl.LightningModule):
             for _, metric in self.test_metrics.items():
                 metric(prediction, labels)
 
-    def on_test_epoch_end(self, outs):
+    def on_test_epoch_end(self):
         if self.export_metrics:
             for name, metric in self.test_metrics.items():
                 if "conf_mat" in name:

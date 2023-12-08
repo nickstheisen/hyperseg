@@ -28,13 +28,17 @@ def label_histogram(dataset, n_classes):
 
 class HSIDriveDataset(Dataset):
 
-    def __init__(self, basepath, transform):
+    def __init__(self, basepath, transform, debug=False):
         self._basepath = Path(basepath)
         self._labelpath = self._basepath.joinpath('labels')
         self._datapath = self._basepath.joinpath('cubes_fl32')
+        self.debug = debug
         self._samplelist = np.array(
             [sample.stem for sample in self._labelpath.glob('*.png')]
         )
+        
+        if self.debug:
+            self._samplelist = self._samplelist[:100]
         
         self._transform = transform
 
@@ -75,7 +79,7 @@ class HSIDrive(pl.LightningDataModule):
         normalize: bool=False,
         spectral_average: bool=False,
         ignore_water:bool=True,
-        prep_3dconv:bool=False,
+        debug: bool = False
         ):
         super().__init__()
         self.hparams['dataset_name'] = "HSIDrive"
@@ -85,10 +89,10 @@ class HSIDrive(pl.LightningDataModule):
         self.basepath = Path(basepath)
         self.train_prop = train_prop
         self.val_prop = val_prop
+        self.debug = debug
 
         self.spectral_average = spectral_average
         self.ignore_water = ignore_water
-        self.prep_3dconv = prep_3dconv
         
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -107,12 +111,6 @@ class HSIDrive(pl.LightningDataModule):
                                 self.transform,
                                 SpectralAverage()
                              ])
-        if self.prep_3dconv:
-            self.transform = transforms.Compose([
-                self.transform,
-                InsertEmptyChannelDim(1)
-            ])
-
         
         self.manual_seed = manual_seed
         self.precalc_histograms=precalc_histograms
@@ -120,7 +118,7 @@ class HSIDrive(pl.LightningDataModule):
         self.c_hist_val = None
         self.c_hist_test = None
 
-        self.n_classes = 9 if self.ignore_water else 10
+        self.n_classes = 10 if self.ignore_water else 11
         self.undef_idx = 9 if self.ignore_water else 10
         self.label_def = label_def
 
@@ -145,7 +143,7 @@ class HSIDrive(pl.LightningDataModule):
             return None
 
     def setup(self, stage: Optional[str] = None):
-        dataset = HSIDriveDataset(self.basepath, self.transform)
+        dataset = HSIDriveDataset(self.basepath, self.transform, debug=self.debug)
         train_size = round(self.train_prop * len(dataset))
         val_size = round(self.val_prop * len(dataset))
         test_size = len(dataset) - (train_size + val_size)
