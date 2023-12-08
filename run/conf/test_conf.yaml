@@ -5,7 +5,9 @@ defaults:
 
 model:
     compile: False # not tested yet
-    ckpt: None
+    da_hflip: 0.0
+    dropout: 0.0
+    ckpt: ???
 
 training:
     resume_path: null
@@ -14,6 +16,7 @@ training:
     seed: 42
     accelerator: 'gpu'
     devices: [0]
+    early_stopping: False
 
 logging:
     project_name: ??? # required field, must be set by user

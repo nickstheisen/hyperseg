@@ -10,9 +10,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
-import datashader as ds
-import datashader.transfer_functions as tr
-import colorcet
+
 import cv2
 
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -156,6 +154,10 @@ class SpectrumPlotter():
     based on: https://stackoverflow.com/questions/47175398/line-based-heatmap-or-2d-line-histogram
     """
     def plot_heatmap(self, out_dir, filetype='jpg'): 
+        import datashader as ds
+        import datashader.transfer_functions as tr
+        import colorcet
+
         out_path = Path(out_dir)
         out_path.mkdir(parents=True, exist_ok=True)
 
