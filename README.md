@@ -4,7 +4,7 @@ A framework for **hyperspectral semantic segmentation** based on pytorch and pyt
 
 ### Supported Datasets
     * [HyKo2](https://wp.uni-koblenz.de/hyko/) ([paper](https://openaccess.thecvf.com/content_ICCV_2017_workshops/w3/html/Winkens_HyKo_A_Spectral_ICCV_2017_paper.html))
-    * [HSI-Drive v2.0](https://ipaccess.ehu.eus/HSI-Drive/) ([paper]([https://ipaccess.ehu.eus/HSI-Drive/files/IVS_2021_web.pdf](https://ieeexplore.ieee.org/document/9575298)))
+    * [HSI-Drive v2.0](https://ipaccess.ehu.eus/HSI-Drive/) ([paper](https://ieeexplore.ieee.org/document/9575298))
     * [Hyperspectral City V2.0](https://pbdl-ws.github.io/pbdl2021/challenge/download.html)
     * [HSI-Road](https://github.com/NUST-Machine-Intelligence-Laboratory/hsi_road) ([paper](https://ieeexplore.ieee.org/document/9102890))
     * [WHU-OHS](https://github.com/zjjerica/WHU-OHS-Pytorch) ([paper](https://www.sciencedirect.com/science/article/pii/S1569843222002102))
