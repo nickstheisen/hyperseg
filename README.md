@@ -56,3 +56,19 @@ python run/train.py logging.project_name=<project_name>
 # test
 python run/test.py logging.project_name=<project_name> model.ckpt=<path_to_checkpoint>
 ```
+
+## Benchmark
+
+|Dataset|Approach|$R_mu$|$R_M$|$F_{1_{M}}$|$J_M$|
+|---|---|---|---|---|---|
+|HCV|U-Net                            |89.2|52.6|54.2|45.6|
+| |HS3-Baseline                       |93.1|60.0|62.7|54.3|
+|HyKo2-VIS|U-Net                      |85.9|68.6|68.8|57.8|
+| |HS3-Baseline                       |88.5|72.6|72.5|62.2|
+|HSI-Drive-V2|U-Net                   |95.0|76.1|76.8|65.9|
+| |HS3-Baseline|                      |96.0|76.7|82.7|72.7|
+| | |                                 |    |    |    |    |
+|**Average </br> Performance**|U-Net  |90.0|65.8|66.6|56.4|
+| |HS3-Baseline                       |92.7|70.8|72.6|63.0|
+|**Wors-Case </br> Performance**|U-Net|85.9|52.6|54.2|45.6|
+| |HS3-Baseline                       |88.5|72.6|72.5|62.22
