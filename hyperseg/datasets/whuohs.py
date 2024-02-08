@@ -75,7 +75,6 @@ class WHUOHS(pl.LightningDataModule):
                     debug=self.debug)
 
         img, _ = dataset[0]
-        img = img.squeeze()
         self.img_shape = img.shape[1:]
         self.n_channels = img.shape[0]
 

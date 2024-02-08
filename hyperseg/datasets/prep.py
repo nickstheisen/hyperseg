@@ -12,6 +12,8 @@ from sklearn.decomposition import PCA
 
 from hyperseg.datasets.utils import TqdmUpTo
 
+N_DEBUG_SAMPLES = 5
+
 
 DATASETS_CONFIG = {
         'HyKo2-VIS': {
@@ -86,7 +88,7 @@ def download_dataset(base_dir, name):
                         print(f'File {filename} is incomplete. Keys are {mat.keys()}.')
     return filepath_hdf 
 
-def apply_pca(n_components, origin_path, target_path):
+def apply_pca(n_components, origin_path, target_path, debug=False):
     origin_path = Path(origin_path)
     target_path = Path(target_path)
     if target_path.exists():
@@ -98,9 +100,10 @@ def apply_pca(n_components, origin_path, target_path):
 
     pca = PCA(n_components)
     with h5py.File(target_path, "w") as target_file, h5py.File(origin_path, "r") as origin_file:
-        num_data = len(origin_file.keys())
+        num_data = N_DEBUG_SAMPLES if debug else len(origin_file.keys()) 
+        keys = list(origin_file.keys())[:N_DEBUG_SAMPLES] if debug else list(origin_file.keys())
         with tqdm(total=num_data) as pbar:
-            for key in origin_file.keys():
+            for key in keys:
                 group = target_file.create_group(key)
 
                 # dim red. with pca
@@ -112,6 +115,7 @@ def apply_pca(n_components, origin_path, target_path):
                 Xt = pca.fit_transform(X)
                 #print(f"pca variance ratio:{pca.explained_variance_ratio_}")
                 transformed = Xt.reshape(out_shape)
+                print(transformed.shape)
                 
                 # write to file
                 group.create_dataset("labels",  data=origin_file[key]['labels'])

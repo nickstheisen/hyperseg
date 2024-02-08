@@ -13,6 +13,8 @@ import numpy as np
 from hyperseg.datasets.analysis.tools import StatCalculator
 from hyperseg.datasets.transforms import Normalize
 
+N_DEBUG_SAMPLES = 5
+
 def label_histogram(dataset, n_classes):
     label_hist = torch.zeros(n_classes) # do not count 'unefined'(highest class_id)
     for i, (_, labels) in enumerate(DataLoader(dataset)):
@@ -142,8 +144,8 @@ class HSDataset(Dataset):
         self._transform = transform
 
         if self.debug:
-            # only use 100 samples overall
-            self._samplelist = self._samplelist[:100]
+            # only use N_DEBUG_SAMPLES samples overall
+            self._samplelist = self._samplelist[:N_DEBUG_SAMPLES]
         h5file.close()
 
     def __len__(self):

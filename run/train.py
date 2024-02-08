@@ -35,7 +35,7 @@ def train(cfg):
     if cfg.dataset.pca is not None:
         if cfg.dataset.pca_out_dir is None:
             raise RuntimeError("If `pca` is set, you also need to set `pca_out_dir`")
-        if cfg.dataset.spectral_average is not None:
+        if cfg.dataset.spectral_average == True:
             raise RuntimeError("`pca` and `spectral_average` can not be used at the same time.")
 
     if cfg.model.name not in valid_models:
@@ -50,7 +50,7 @@ def train(cfg):
     make_reproducible(cfg.training.seed)
     
     ## Logging
-    log_dir = Path(cfg.logging.path+f"{cfg.logging.project_name}/{cfg.dataset.name}")
+    log_dir = Path(cfg.logging.path+f"{cfg.logging.project_name}")
     log_dir.mkdir(parents=True, exist_ok=True)
     resume_path = cfg.training.resume_path
     loggers = []
@@ -58,15 +58,15 @@ def train(cfg):
     ts = datetime.now().strftime("%Y%m%d_%H-%M-%S")
     if cfg.logging.tb_logger:
         loggers.append(pl_loggers.TensorBoardLogger(
-                version=f"{cfg.model.name}-{ts}",
+                version=f"{cfg.dataset.name}-{cfg.model.name}-{ts}",
                 save_dir=log_dir,
         ))
 
     if cfg.logging.wb_logger:
         wandb.finish()
         loggers.append(pl_loggers.WandbLogger(
-                name=f"{cfg.model.name}-{ts}",
-                project=f"{cfg.logging.project_name}-{cfg.dataset.name}",
+                name=f"{cfg.dataset.name}-{cfg.model.name}-{ts}",
+                project=f"{cfg.logging.project_name}",
                 save_dir=log_dir,
         ))
 
@@ -105,11 +105,13 @@ def train(cfg):
         if not pca_out_path.is_dir():
             raise RuntimeError("`pca_out_dir` must be a directory")
         
-        pca_out_path = pca_out_path.joinpath(f"{cfg.dataset.name}_PCA{cfg.dataset.pca}")
-        apply_pca(cfg.dataset.pca, cfg.dataset.basepath, pca_out_path)
+        pca_out_path = pca_out_path.joinpath(f"{cfg.dataset.name}_PCA{cfg.dataset.pca}.h5")
+        apply_pca(cfg.dataset.pca, cfg.dataset.basepath, pca_out_path, debug=cfg.dataset.debug)
         cfg.dataset.basepath = pca_out_path
+        print(f"PCA applied! Using dataset {cfg.dataset.basepath}")
         
     datamodule = get_datamodule(cfg.dataset)
+    print(datamodule.n_channels)
 
     ## Model
     with open_dict(cfg):

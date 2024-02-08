@@ -73,7 +73,6 @@ class HSIRoad(pl.LightningDataModule):
                     mode='train',
                     debug=self.debug)
         img, _ = dataset[0]
-        img = img.squeeze()
         self.img_shape = img.shape[1:]
         self.n_channels = img.shape[0]
       
