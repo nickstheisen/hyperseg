@@ -81,6 +81,13 @@ def convert_hsds_to_hdf(input_dir, outfile, compress):
                     else:
                         print(f'{file} or {labelfile} is missing or empty.')
 
+def hsd2npy(infile, outfile, half_precision=False):
+    data = load_data_from_hsd(infile)
+    if half_precision:
+        np.save(outfile, np.float16(data))
+    else:
+        np.save(outfile, data)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert PBDL data set consisting of .hsd-files'
             ' to single hdf5-file.')

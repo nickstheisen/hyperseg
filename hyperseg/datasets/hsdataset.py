@@ -12,18 +12,9 @@ from pathlib import Path
 import numpy as np
 from hyperseg.datasets.analysis.tools import StatCalculator
 from hyperseg.datasets.transforms import Normalize
+from hyperseg.datasets.utils import label_histogram
 
 N_DEBUG_SAMPLES = 5
-
-def label_histogram(dataset, n_classes):
-    label_hist = torch.zeros(n_classes) # do not count 'unefined'(highest class_id)
-    for i, (_, labels) in enumerate(DataLoader(dataset)):
-        label_ids, counts = labels.unique(return_counts=True)
-        for i in range(len(label_ids)):
-            label_id = label_ids[i]
-            if not (label_id == n_classes):
-                label_hist[label_id] += counts[i]
-    return label_hist
 
 class HSDataModule(pl.LightningDataModule):
 

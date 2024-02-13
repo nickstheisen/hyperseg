@@ -66,11 +66,9 @@ def get_datamodule(cfg):
         )
     elif cfg.name == 'hcv2':
         datamodule = HyperspectralCityV2(
-            filepath=cfg.basepath,
+            basepath=cfg.basepath,
             num_workers=cfg.num_workers,
             batch_size=cfg.batch_size,
-            train_prop=cfg.train_prop,
-            val_prop=cfg.val_prop,
             manual_seed=cfg.manual_seed,
             half_precision=cfg.half_precision,
             label_def=label_def_dir.joinpath(cfg.label_def),

@@ -23,3 +23,14 @@ def load_label_def(label_def):
     label_names = np.array(label_defs[:,1])
     label_colors = np.array(label_defs[:, 2:], dtype='int')
     return label_names, label_colors
+
+def label_histogram(dataset, n_classes):
+    label_hist = torch.zeros(n_classes) # do not count 'unefined'(highest class_id)
+    for i, (_, labels) in enumerate(DataLoader(dataset)):
+        label_ids, counts = labels.unique(return_counts=True)
+        for i in range(len(label_ids)):
+            label_id = label_ids[i]
+            if not (label_id == n_classes):
+                label_hist[label_id] += counts[i]
+    return label_hist
+

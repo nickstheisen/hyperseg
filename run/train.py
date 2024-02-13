@@ -81,7 +81,7 @@ def train(cfg):
             )
     )
     callbacks.append(ModelSummary())
-    if cfg.dataset.name not in ['whuohs']:
+    if cfg.dataset.name not in ['whuohs','hcv2']:
         callbacks.append(ExportSplitCallback()) # split is already defined in benchmark
 
     if cfg.training.early_stopping:
