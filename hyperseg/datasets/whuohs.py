@@ -14,41 +14,30 @@ from torchvision import transforms
 
 from hyperseg.datasets.analysis.tools import StatCalculator
 from hyperseg.datasets.transforms import ToTensor, PermuteData, Normalize, ReplaceLabels, SpectralAverage, InsertEmptyChannelDim
+from .hsdataset import HSDataModule, HSDataset
+from hyperseg.datasets.utils import apply_pca
 
 def get_label_path(path):
         return Path(str(path).replace('image', 'label'))
 
-class WHUOHS(pl.LightningDataModule):
-    def __init__( 
-            self,
-            basepath: str,
-            batch_size: int,
-            num_workers: int,
-            label_def: str,
-            normalize: bool = False,
-            spectral_average: bool=False,
-            prep_3dconv:bool=False,
-            debug: bool = False,
-            ):
-        super().__init__()
+class WHUOHS(HSDataModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         
         self.save_hyperparameters()
 
-        self.basepath = Path(basepath).expanduser()
-        
-        self.spectral_average = spectral_average
-        self.prep_3dconv = prep_3dconv
-        
-        self.debug = debug
-        
-        self.batch_size = batch_size
-        self.num_workers = num_workers
+        self.n_classes = 25
+        self.undef_idx = 0
+        self.filepath_train = self.basepath.joinpath('whuohs_train.h5')
+        self.filepath_test = self.basepath.joinpath('whuohs_test.h5')
+        self.filepath_val = self.basepath.joinpath('whuohs_val.h5')
+
         self.transform = transforms.Compose([
                             ToTensor(),
                             PermuteData(new_order=[2,0,1]),
                         ])
 
-        if spectral_average:
+        if self.spectral_average:
             self.transform = transforms.Compose([
                                 self.transform,
                                 SpectralAverage()
@@ -59,74 +48,48 @@ class WHUOHS(pl.LightningDataModule):
                 InsertEmptyChannelDim(1)
             ])
 
-        self.n_classes = 25
-        self.undef_idx = 0
-        self.label_def = label_def
-
-        # statistics (if normalization is activated)
-        self.normalize = normalize
-        self.means = None
-        self.stds = None
+        if self.pca is not None:
+            self.enable_pca()
 
         # read dimensions from image
-        dataset = WHUOHSDataset(basepath=self.basepath,
-                    transform=self.transform,
-                    mode='train',
-                    debug=self.debug)
-
+        dataset = HSDataset(filepath=self.filepath_val, transform=self.transform)
         img, _ = dataset[0]
         self.img_shape = img.shape[1:]
         self.n_channels = img.shape[0]
 
-
     def setup(self, stage: Optional[str] = None):
-        self.dataset_train = WHUOHSDataset(
-                                basepath=self.basepath,
-                                transform=self.transform,
-                                mode='train',
-                                debug=self.debug)
-
-        self.dataset_val = WHUOHSDataset(
-                                basepath=self.basepath,
-                                transform=self.transform,
-                                mode='val',
-                                debug=self.debug)
+        self.dataset_train = HSDataset(  self.filepath_train, 
+                                    transform=self.transform,
+                                    debug=self.debug)
+        self.dataset_test = HSDataset(   self.filepath_test,
+                                    transform=self.transform,
+                                    debug=self.debug)
+        self.dataset_val = HSDataset(    self.filepath_val,
+                                    transform=self.transform,
+                                    debug=self.debug)
         
-        self.dataset_test = WHUOHSDataset(
-                                basepath=self.basepath,
-                                transform=self.transform,
-                                mode='test',
-                                debug=self.debug)
-
         # calculate data statistics for normalization
         if self.normalize:
-            stat_calc = StatCalculator(self.dataset_train)
-            self.means, self.stds = stat_calc.getDatasetStats()
+            self.enable_normalization()
 
-            # enable normalization in whole data set
-            self.dataset_train.enable_normalization(self.means, self.stds)
-            self.dataset_val.enable_normalization(self.means, self.stds)
-            self.dataset_test.enable_normalization(self.means, self.stds)
+    def enable_pca(self):
+        # train
+        outpath_train = self.pca_out_dir.joinpath(f'whuohs_train_pca{self.pca}.h5')
+        apply_pca(  self.pca, self.filepath_train, outpath_train, 
+                    debug=self.debug, half_precision=False)
+        self.filepath_train = outpath_train
 
-    def train_dataloader(self):
-        return DataLoader(
-                self.dataset_train,
-                batch_size=self.batch_size,
-                shuffle=True,
-                num_workers=self.num_workers)
-    def val_dataloader(self):
-        return DataLoader(
-                self.dataset_val,
-                batch_size=self.batch_size,
-                shuffle=False,
-                num_workers=self.num_workers)
+        # test
+        outpath_test = self.pca_out_dir.joinpath(f'whuohs_test_pca{self.pca}.h5')
+        apply_pca(  self.pca, self.filepath_test, outpath_test, 
+                    debug=self.debug, half_precision=False)
+        self.filepath_test = outpath_test
 
-    def test_dataloader(self):
-        return DataLoader(
-                self.dataset_val, 
-                batch_size=self.batch_size,
-                shuffle=False,
-                num_workers=self.num_workers)
+        # val 
+        outpath_val = self.pca_out_dir.joinpath(f'whuohs_val_pca{self.pca}.h5')
+        apply_pca(  self.pca, self.filepath_val, outpath_val, 
+                    debug=self.debug, half_precision=False)
+        self.filepath_val = outpath_val
 
 class WHUOHSDataset(Dataset):
     def __init__(self, 

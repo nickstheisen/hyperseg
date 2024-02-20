@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import time
 plt.switch_backend('agg')
 
 from typing import Optional
@@ -58,6 +59,8 @@ class SemanticSegmentationModule(pl.LightningModule):
             momentum: float,
             weight_decay: float,
             ignore_index: int,
+            log_grad_norm: bool = False,
+            rich_train_log: bool = True,
             optimizer_eps: int = 1e-08,
             classification_task: str = "multiclass",
             class_weighting: str = None,
@@ -91,7 +94,10 @@ class SemanticSegmentationModule(pl.LightningModule):
 
         # Augmentation
         self.augment = DataAugmentation(p_hflip=da_hflip)
-        
+
+        # logging
+        self.log_grad_norm = log_grad_norm
+        self.rich_train_log = rich_train_log
 
         ## Attention! Unfortunately, metrics must be created as members instead of directly storing
         ## them in dictionaries otherwise they are not identified as child modules
@@ -106,46 +112,48 @@ class SemanticSegmentationModule(pl.LightningModule):
                 ignore_index=self.ignore_index, 
                 average='micro')
         self.train_metrics["Train/accuracy-micro"] = self.acc_train_micro
-        self.acc_train_macro = torchmetrics.Accuracy(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                average='macro')
-        self.train_metrics["Train/accuracy-macro"] = self.acc_train_macro
-        self.acc_train_class = torchmetrics.Accuracy(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                average='none')
-        self.train_metrics["Train/accuracy-class"] = self.acc_train_class
-        self.f1_train_macro = torchmetrics.F1Score(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                average='macro')
-        self.train_metrics["Train/f1-macro"] = self.f1_train_macro
-        self.f1_train_class = torchmetrics.F1Score(
-                task=self.classification_task,
-                 num_classes=self.n_classes,
-                ignore_index=self.ignore_index, 
-                average='none')
-        self.train_metrics["Train/f1-class"] = self.f1_train_class
-        self.jaccard_train = torchmetrics.JaccardIndex(
-                task=self.classification_task,
-                ignore_index=self.ignore_index, 
-                num_classes=self.n_classes)
-        self.train_metrics["Train/jaccard"] = self.jaccard_train
-        self.jaccard_train_class = torchmetrics.JaccardIndex(
-                task=self.classification_task,
-                average='none',
-                ignore_index=self.ignore_index,
-                num_classes=self.n_classes)
-        self.train_metrics["Train/jaccard-class"] = self.jaccard_train_class
-        self.confmat_train = torchmetrics.ConfusionMatrix(
-                task=self.classification_task,
-                num_classes=self.n_classes,
-                ignore_index=self.ignore_index)
-        self.train_metrics["Train/conf_mat"] = self.confmat_train
+        
+        if self.rich_train_log:
+            self.acc_train_macro = torchmetrics.Accuracy(
+                    task=self.classification_task,
+                    num_classes=self.n_classes,
+                    ignore_index=self.ignore_index, 
+                    average='macro')
+            self.train_metrics["Train/accuracy-macro"] = self.acc_train_macro
+            self.acc_train_class = torchmetrics.Accuracy(
+                    task=self.classification_task,
+                    num_classes=self.n_classes,
+                    ignore_index=self.ignore_index, 
+                    average='none')
+            self.train_metrics["Train/accuracy-class"] = self.acc_train_class
+            self.f1_train_macro = torchmetrics.F1Score(
+                    task=self.classification_task,
+                    num_classes=self.n_classes,
+                    ignore_index=self.ignore_index, 
+                    average='macro')
+            self.train_metrics["Train/f1-macro"] = self.f1_train_macro
+            self.f1_train_class = torchmetrics.F1Score(
+                    task=self.classification_task,
+                     num_classes=self.n_classes,
+                    ignore_index=self.ignore_index, 
+                    average='none')
+            self.train_metrics["Train/f1-class"] = self.f1_train_class
+            self.jaccard_train = torchmetrics.JaccardIndex(
+                    task=self.classification_task,
+                    ignore_index=self.ignore_index, 
+                    num_classes=self.n_classes)
+            self.train_metrics["Train/jaccard"] = self.jaccard_train
+            self.jaccard_train_class = torchmetrics.JaccardIndex(
+                    task=self.classification_task,
+                    average='none',
+                    ignore_index=self.ignore_index,
+                    num_classes=self.n_classes)
+            self.train_metrics["Train/jaccard-class"] = self.jaccard_train_class
+            self.confmat_train = torchmetrics.ConfusionMatrix(
+                    task=self.classification_task,
+                    num_classes=self.n_classes,
+                    ignore_index=self.ignore_index)
+            self.train_metrics["Train/conf_mat"] = self.confmat_train
 
         ## val metrics
         self.val_metrics = {}
@@ -331,8 +339,9 @@ class SemanticSegmentationModule(pl.LightningModule):
 
 
     def on_before_optimizer_step(self, optimizer):
-        norms = grad_norm(self, norm_type=2)
-        self.log_dict(norms)
+        if self.log_grad_norm:
+            norms = grad_norm(self, norm_type=2)
+            self.log_dict(norms)
 
     def on_train_epoch_end(self):
         if self.export_metrics:

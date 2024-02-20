@@ -1,8 +1,8 @@
 name: 'hcv2'
-basepath: '/mnt/data/datasets/HyperspectralCityV2.h5'
-batch_size: 4
-train_prop: 0.5
-val_prop: 0.1
+basepath: '/home/hyperseg/data/hcv2/'
+batch_size: 2
 manual_seed: 42
 half_precision: True
 label_def: 'HCv2_labeldef.txt'
+num_workers: 4
+

@@ -2,3 +2,6 @@ name: 'whuohs'
 basepath: '/mnt/data/datasets/whuohs'
 batch_size: 16
 label_def: 'whuohs_labeldef.txt'
+manual_seed: 42 
+pca: 1
+pca_out_dir: '/mnt/data/datasets/whuohs/pca1'

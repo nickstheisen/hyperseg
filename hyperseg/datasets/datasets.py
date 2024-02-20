@@ -17,40 +17,42 @@ def replace_if_exists(paramname, defaultval, argdict):
 def get_datamodule(cfg):
     if cfg.name == 'hsidrive':
         datamodule = HSIDrive(
-            basepath = cfg.basepath,
+            basepath=cfg.basepath,
             num_workers=cfg.num_workers,
             batch_size=cfg.batch_size,
-            train_prop=cfg.train_prop,
-            val_prop=cfg.val_prop,
-            manual_seed=cfg.manual_seed,
-            precalc_histograms=cfg.precalc_histograms,
-            normalize=cfg.normalize,
             label_def=label_def_dir.joinpath(cfg.label_def),
+            manual_seed=cfg.manual_seed,
+            normalize=cfg.normalize,
             spectral_average=cfg.spectral_average,
-            ignore_water=cfg.ignore_water,      # water class is ignored 
+            pca=cfg.pca,
+            pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
+            ignore_water=cfg.ignore_water,      # water class is ignored 
         )
     elif cfg.name == 'whuohs':
         datamodule = WHUOHS(
-            basepath = cfg.basepath,
-            batch_size=cfg.batch_size,
+            basepath=cfg.basepath,
             num_workers=cfg.num_workers,
-            normalize=cfg.normalize,
+            batch_size=cfg.batch_size,
             label_def=label_def_dir.joinpath(cfg.label_def),
+            manual_seed=cfg.manual_seed,
+            normalize=cfg.normalize,
             spectral_average=cfg.spectral_average,
+            pca=cfg.pca,
+            pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
         )
     elif cfg.name == 'hyko2':
         datamodule = HyKo2(
-            filepath=cfg.basepath,
+            basepath=cfg.basepath,
             num_workers=cfg.num_workers,
             batch_size=cfg.batch_size,
-            label_set=cfg.label_set,
-            train_prop=cfg.train_prop,
-            val_prop=cfg.val_prop,
-            manual_seed=cfg.manual_seed,
             label_def=label_def_dir.joinpath(cfg.label_def),
+            manual_seed=cfg.manual_seed,
+            normalize=cfg.normalize,
             spectral_average=cfg.spectral_average,
+            pca=cfg.pca,
+            pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
         )
     elif cfg.name == 'hsiroad':
@@ -69,11 +71,14 @@ def get_datamodule(cfg):
             basepath=cfg.basepath,
             num_workers=cfg.num_workers,
             batch_size=cfg.batch_size,
-            manual_seed=cfg.manual_seed,
-            half_precision=cfg.half_precision,
             label_def=label_def_dir.joinpath(cfg.label_def),
+            manual_seed=cfg.manual_seed,
+            normalize=cfg.normalize,
             spectral_average=cfg.spectral_average,
+            pca=cfg.pca,
+            pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
+            half_precision=cfg.half_precision,
         )
 
     else:

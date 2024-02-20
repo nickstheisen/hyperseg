@@ -20,45 +20,52 @@ class HSDataModule(pl.LightningDataModule):
 
     def __init__(
             self,
-            filepath: str,
+            basepath: str,
             num_workers: int,
             batch_size: int,
-            train_prop: float, # train proportion (of all data)
-            val_prop: float, # validation proportion (of all data)
             label_def: str,
             manual_seed: int=None,
-            precalc_histograms: bool=False,
             normalize: bool=False,
             spectral_average: bool=False,
+            pca: int=None,
+            pca_out_dir: str='.',
+            prep_3dconv: bool=False,
             debug: bool = False
     ):
         super().__init__()
         
         self.save_hyperparameters()
 
-        self.filepath = filepath
+        self.basepath = Path(basepath)
         self.num_workers = num_workers
         self.batch_size = batch_size
-        self.train_prop = train_prop
-        self.val_prop = val_prop
         self.manual_seed = manual_seed
         self.debug = debug
         
         self.label_def = label_def
 
-        self.spectral_average = spectral_average
         
+        # data preprocessing
+        self.normalize = normalize
+        self.spectral_average = spectral_average
+        self.pca=pca
+        self.pca_out_dir=Path(pca_out_dir)
+        if not self.pca_out_dir.exists():
+            self.pca_out_dir.mkdir(parents=True, exist_ok=True)
+        if not self.pca_out_dir.is_dir():
+            raise RuntimeError("`pca_out_dir` must be a directory!")
+        self.prep_3dconv = prep_3dconv
+      
+        '''
         self.precalc_histograms=precalc_histograms
         self.c_hist_train = None
         self.c_hist_val = None
         self.c_hist_test = None
 
-        # statistics (if normalization is activated)
-        self.normalize = normalize
-        self.means = None
-        self.stds = None
+        '''
 
 
+    '''
     def class_histograms(self):
         if self.c_hist_train is not None :
             return (self.c_hist_train, self.c_hist_val, self.c_hist_test)
@@ -70,43 +77,29 @@ class HSDataModule(pl.LightningDataModule):
             return (self.n_train_samples, self.n_val_samples, self.n_test_samples)
         else :
             return None
-
+    '''
+    
+    
     def setup(self, stage: Optional[str] = None):
-        dataset = HSDataset(self.filepath, transform=self.transform, debug=self.debug)
-        train_size = round(self.train_prop * len(dataset))
-        val_size = round(self.val_prop * len(dataset))
-        test_size = len(dataset) - (train_size + val_size)
-        if self.manual_seed is not None:
-            self.dataset_train, self.dataset_val, self.dataset_test = random_split(
-                    dataset, 
-                    [train_size, val_size, test_size], 
-                    generator=torch.Generator().manual_seed(self.manual_seed))
-        else :
-            self.dataset_train, self.dataset_val, self.dataset_test = random_split(
-                    dataset, 
-                    [train_size, val_size, test_size])
+        raise NotImplementedError()
 
-        # calculate class_histograms
-        if self.precalc_histograms:
-            self.c_hist_train = label_histogram(
-                    self.dataset_train, self.n_classes)
-            self.c_hist_val = label_histogram(
-                    self.dataset_val, self.n_classes)
-            self.c_hist_test = label_histogram(
-                    self.dataset_test, self.n_classes)
+    def enable_normalization(self):
+        stat_calc = StatCalculator(self.dataset_train)
+        self.means, self.stds = stat_calc.getDatasetStats()
 
-        # calculate data statistics for normalization
-        if self.normalize:
-            stat_calc = StatCalculator(self.dataset_train)
-            self.means, self.stds = stat_calc.getDatasetStats()
+        # enable normalization in whole data set
+        dataset_train.enable_normalization(self.means, self.stds)
+        dataset_test.enable_normalization(self.means, self.stds)
+        dataset_val.enable_normalization(self.means, self.stds)
 
-            # enable normalization in whole data set
-            dataset.enable_normalization(self.means, self.stds)
-                
+    def enable_pca(self):
+        raise NotImplementedError
+
     def train_dataloader(self):
         return DataLoader(self.dataset_train,
                 batch_size=self.batch_size,
                 shuffle=True,
+                pin_memory=True,
                 num_workers=self.num_workers,
                 persistent_workers=True)
 
@@ -114,12 +107,14 @@ class HSDataModule(pl.LightningDataModule):
         return DataLoader(self.dataset_val,
                 batch_size=self.batch_size,
                 shuffle=False,
+                pin_memory=True,
                 num_workers=self.num_workers)
 
     def test_dataloader(self):
         return DataLoader(self.dataset_test,
                 batch_size=self.batch_size,
                 shuffle=False,
+                pin_memory=True,
                 num_workers=self.num_workers)
 
 class HSDataset(Dataset):
@@ -155,7 +150,7 @@ class HSDataset(Dataset):
 
     def __getitem__(self, idx):
         h5file = h5py.File(self._filepath)
-        sample = (np.array(h5file[self._samplelist[idx]]['data']),
+        sample = (np.array(h5file[self._samplelist[idx]]['image']),
                 np.array(h5file[self._samplelist[idx]]['labels']))
 
         if self._transform:

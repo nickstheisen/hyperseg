@@ -14,10 +14,13 @@ import wandb
 from hyperseg.datasets import get_datamodule
 from hyperseg.datasets.callbacks import ExportSplitCallback
 from hyperseg.models import get_model
-from hyperseg.datasets.prep import apply_pca
 
 from datetime import datetime
 from pathlib import Path
+import os
+
+# set max_split_size_mb to 512 to avoid fragmentation
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:256"
 
 
 valid_datasets = ['hsidrive','whuohs','hyko2', 'hsiroad', 'hcv2']
@@ -31,7 +34,6 @@ def make_reproducible(manual_seed=42):
 def train(cfg):
     print(OmegaConf.to_yaml(cfg))
     
-    # Check Parameters
     if cfg.dataset.pca is not None:
         if cfg.dataset.pca_out_dir is None:
             raise RuntimeError("If `pca` is set, you also need to set `pca_out_dir`")
@@ -81,8 +83,6 @@ def train(cfg):
             )
     )
     callbacks.append(ModelSummary())
-    if cfg.dataset.name not in ['whuohs','hcv2']:
-        callbacks.append(ExportSplitCallback()) # split is already defined in benchmark
 
     if cfg.training.early_stopping:
         callbacks.append(
@@ -99,19 +99,7 @@ def train(cfg):
     else:
         precision=32
 
-    if cfg.dataset.pca is not None:
-        pca_out_path = Path(cfg.dataset.pca_out_dir)
-        
-        if not pca_out_path.is_dir():
-            raise RuntimeError("`pca_out_dir` must be a directory")
-        
-        pca_out_path = pca_out_path.joinpath(f"{cfg.dataset.name}_PCA{cfg.dataset.pca}.h5")
-        apply_pca(cfg.dataset.pca, cfg.dataset.basepath, pca_out_path, debug=cfg.dataset.debug)
-        cfg.dataset.basepath = pca_out_path
-        print(f"PCA applied! Using dataset {cfg.dataset.basepath}")
-        
     datamodule = get_datamodule(cfg.dataset)
-    print(datamodule.n_channels)
 
     ## Model
     with open_dict(cfg):

@@ -2,7 +2,8 @@ name: 'hyko2'
 basepath: '/mnt/data/datasets/hyko2'
 label_set: 'semantic'
 batch_size: 16
-train_prop: 0.5
-val_prop: 0.2
 manual_seed: 42
 label_def: 'hyko2-semantic_labeldef.txt'
+pca: 1
+pca_out_dir: '/mnt/data/datasets/hyko2/pca1'
+

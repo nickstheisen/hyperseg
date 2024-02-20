@@ -116,12 +116,14 @@ class HSIRoad(pl.LightningDataModule):
                 self.dataset_train,
                 batch_size=self.batch_size,
                 shuffle=True,
+                pin_memory=True,
                 num_workers=self.num_workers)
     def val_dataloader(self):
         return DataLoader(
                 self.dataset_val,
                 batch_size=self.batch_size,
                 shuffle=False,
+                pin_memory=True,
                 num_workers=self.num_workers)
 
     def test_dataloader(self):
@@ -132,6 +134,7 @@ class HSIRoad(pl.LightningDataModule):
                 self.dataset_val, 
                 batch_size=self.batch_size,
                 shuffle=False,
+                pin_memory=True,
                 num_workers=self.num_workers)
 
 """

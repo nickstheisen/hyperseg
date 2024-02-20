@@ -7,7 +7,9 @@ from torchvision import transforms
 
 
 from hyperseg.datasets.analysis.tools import StatCalculator
-from hyperseg.datasets.transforms import ToTensor, ReplaceLabels, Normalize, SpectralAverage, InsertEmptyChannelDim
+from hyperseg.datasets.transforms import ToTensor, ReplaceLabels, Normalize, SpectralAverage, InsertEmptyChannelDim, PermuteData
+from .hsdataset import HSDataModule, HSDataset
+from hyperseg.datasets.utils import apply_pca
 
 from typing import List, Any, Optional
 from pathlib import Path
@@ -65,134 +67,77 @@ class HSIDriveDataset(Dataset):
             sample = self._transform(sample)
         return sample
 
-class HSIDrive(pl.LightningDataModule):
-    def __init__(
-        self,
-        basepath: str,
-        batch_size: int,
-        num_workers: int,
-        train_prop: float, # train proportion (of all data)
-        val_prop: float, # validation proportion (of all data)
-        label_def: str,
-        manual_seed: int=None,
-        precalc_histograms: bool=False,
-        normalize: bool=False,
-        spectral_average: bool=False,
-        ignore_water:bool=True,
-        debug: bool = False
-        ):
-        super().__init__()
-        self.hparams['dataset_name'] = "HSIDrive"
+class HSIDrive(HSDataModule):
+    def __init__(self, ignore_water:bool=True, **kwargs):
+        super().__init__(**kwargs)
         
         self.save_hyperparameters()
 
-        self.basepath = Path(basepath)
-        self.train_prop = train_prop
-        self.val_prop = val_prop
-        self.debug = debug
-
-        self.spectral_average = spectral_average
         self.ignore_water = ignore_water
-        
-        self.batch_size = batch_size
-        self.num_workers = num_workers
+        self.n_classes = 10 if self.ignore_water else 11
+        self.undef_idx = 9 if self.ignore_water else 10
+
+        self.filepath_train = self.basepath.joinpath('hsidrive_train.h5')
+        self.filepath_test = self.basepath.joinpath('hsidrive_test.h5')
+        self.filepath_val = self.basepath.joinpath('hsidrive_val.h5')
+
         if ignore_water:
             self.transform = transforms.Compose([
                             ToTensor(),
-                            ReplaceLabels({0:9, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:9, 9:7, 10:8}) # replace undefined 0 and water labels 8 with 9 and then shift labels according
+                            ReplaceLabels({0:9, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:9, 9:7, 10:8}), # replace undefined 0 and water labels 8 with 9 and then shift labels according
+                            PermuteData(new_order=[2,0,1]),
                         ])
         else:
             self.transform = transforms.Compose([
                             ToTensor(),
-                            ReplaceLabels({0:10, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7, 9:8, 10:9}) # replace undefined label 0 with 10 and then shift labels by one
+                            ReplaceLabels({0:10, 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6, 8:7, 9:8, 10:9}), # replace undefined label 0 with 10 and then shift labels by one
+                            PermuteData(new_order=[2,0,1]),
                         ])
         if self.spectral_average:
             self.transform = transforms.Compose([
                                 self.transform,
                                 SpectralAverage()
                              ])
-        
-        self.manual_seed = manual_seed
-        self.precalc_histograms=precalc_histograms
-        self.c_hist_train = None
-        self.c_hist_val = None
-        self.c_hist_test = None
 
-        self.n_classes = 10 if self.ignore_water else 11
-        self.undef_idx = 9 if self.ignore_water else 10
-        self.label_def = label_def
-
-
-        # statistics (if normalization is activated)
-        self.normalize = normalize
-        self.means = None
-        self.stds = None
+        if self.pca is not None:
+            self.enable_pca()
         
         # read dimensions from image
-        dataset = HSIDriveDataset(self.basepath, self.transform)
-        img, _ = dataset[0]
+        dataset = HSDataset(self.filepath_val, transform=self.transform)
+        img, _ = dataset[1]
         self.img_shape = img.shape[1:]
         self.n_channels = img.shape[0]
        
-
-    def class_histograms(self):
-        if self.c_hist_train is not None :
-            return (self.c_hist_train, self.c_hist_val, self.c_hist_test)
-        else :
-            return None
-
-    def setup(self, stage: Optional[str] = None):
-        dataset = HSIDriveDataset(self.basepath, self.transform, debug=self.debug)
-        train_size = round(self.train_prop * len(dataset))
-        val_size = round(self.val_prop * len(dataset))
-        test_size = len(dataset) - (train_size + val_size)
-
-        if self.manual_seed is not None:
-            self.dataset_train, self.dataset_val, self.dataset_test = random_split(
-                    dataset, 
-                    [train_size, val_size, test_size], 
-                    generator=torch.Generator().manual_seed(self.manual_seed))
-        else:
-            self.dataset_train, self.dataset_val, self.dataset_test = random_split(
-                    dataset, 
-                    [train_size, val_size, test_size])
-
-        # calculate class_histograms
-        if self.precalc_histograms:
-            self.c_hist_train = label_histogram(
-                    self.dataset_train, self.n_classes)
-            self.c_hist_val = label_histogram(
-                    self.dataset_val, self.n_classes)
-            self.c_hist_test = label_histogram(
-                    self.dataset_test, self.n_classes)
-
+    def setup(self, stage: Optional[str] = None):       
+        self.dataset_train = HSDataset(  self.filepath_train, 
+                                    transform=self.transform,
+                                    debug=self.debug)
+        self.dataset_test = HSDataset(   self.filepath_test,
+                                    transform=self.transform,
+                                    debug=self.debug)
+        self.dataset_val = HSDataset(    self.filepath_val,
+                                    transform=self.transform,
+                                    debug=self.debug)
+        
         # calculate data statistics for normalization
         if self.normalize:
-            stat_calc = StatCalculator(self.dataset_train)
-            self.means, self.stds = stat_calc.getDatasetStats()
-            print(f"==Channel means==\n{self.means}\n\n==Channel StDevs==\n{self.stds}")
+            self.enable_normalization()
 
-            # enable normalization in whole data set
-            dataset.enable_normalization(self.means, self.stds)
+    def enable_pca(self):
+        # train
+        outpath_train = self.pca_out_dir.joinpath(f'hsidrive_train_pca{self.pca}.h5')
+        apply_pca(  self.pca, self.filepath_train, outpath_train, 
+                    debug=self.debug, half_precision=False)
+        self.filepath_train = outpath_train
 
-    def train_dataloader(self):
-        return DataLoader(
-                self.dataset_train,
-                batch_size=self.batch_size,
-                shuffle=True,
-                num_workers=self.num_workers)
-    def val_dataloader(self):
-        return DataLoader(
-                self.dataset_val,
-                batch_size=self.batch_size,
-                shuffle=False,
-                num_workers=self.num_workers)
+        # test
+        outpath_test = self.pca_out_dir.joinpath(f'hsidrive_test_pca{self.pca}.h5')
+        apply_pca(  self.pca, self.filepath_test, outpath_test, 
+                    debug=self.debug, half_precision=False)
+        self.filepath_test = outpath_test
 
-    def test_dataloader(self):
-        return DataLoader(
-                self.dataset_test, 
-                batch_size=self.batch_size,
-                shuffle=False,
-                num_workers=self.num_workers)
-
-
+        # val 
+        outpath_val = self.pca_out_dir.joinpath(f'hsidrive_val_pca{self.pca}.h5')
+        apply_pca(  self.pca, self.filepath_val, outpath_val, 
+                    debug=self.debug, half_precision=False)
+        self.filepath_val = outpath_val

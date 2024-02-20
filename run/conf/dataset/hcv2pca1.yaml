@@ -1,0 +1,9 @@
+name: 'hcv2'
+basepath: '/home/hyperseg/data/hcv2'
+batch_size: 1
+manual_seed: 42
+half_precision: True
+label_def: 'HCv2_labeldef.txt'
+pca: 1
+pca_out_dir: '/home/hyperseg/data/hcv2/pca1'
+
