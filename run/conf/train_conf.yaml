@@ -33,3 +33,4 @@ dataset:
     num_workers: 8
     normalize: False
     half_precision: False
+    drop_last: False

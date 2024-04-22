@@ -30,7 +30,8 @@ class HSDataModule(pl.LightningDataModule):
             pca: int=None,
             pca_out_dir: str='.',
             prep_3dconv: bool=False,
-            debug: bool = False
+            debug: bool = False,
+            drop_last: bool = False
     ):
         super().__init__()
         
@@ -41,6 +42,7 @@ class HSDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.manual_seed = manual_seed
         self.debug = debug
+        self.drop_last = drop_last
         
         self.label_def = label_def
 
@@ -101,7 +103,8 @@ class HSDataModule(pl.LightningDataModule):
                 shuffle=True,
                 pin_memory=True,
                 num_workers=self.num_workers,
-                persistent_workers=True)
+                persistent_workers=True,
+                drop_last=self.drop_last)
 
     def val_dataloader(self):
         return DataLoader(self.dataset_val,

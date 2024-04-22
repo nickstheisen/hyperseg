@@ -1,7 +1,7 @@
 name: 'hcv2'
-log_name: 'hcv2'
-basepath: '/home/hyperseg/data/hcv2/'
-batch_size: 2
+log_name: 'hcv2_hr'
+basepath: '/mnt/data/datasets/hcv2/downscaled/'
+batch_size: 4
 manual_seed: 42
 half_precision: True
 label_def: 'HCv2_labeldef.txt'

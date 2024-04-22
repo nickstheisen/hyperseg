@@ -1,5 +1,5 @@
-name: 'unet'
-log_name: 'hs3b'
+name: 'deeplabv3plus'
+log_name: 'deeplabv3plus-resnet101'
 loss_name: 'cross_entropy'
 learning_rate: 0.001
 optimizer_name: 'AdamW'
@@ -7,8 +7,10 @@ optimizer_eps: 1e-08
 momentum: 0.0
 weight_decay: 0.0
 bilinear: True
-batch_norm: True
+batch_norm: False
 class_weighting: null
 export_preds_every_n_epochs: null
-dropout: 0.25
-da_hflip: 0.1
+dropout: 0.0
+backbone: 'resnet101'
+pretrained_weights: null
+pretrained_backbone: False

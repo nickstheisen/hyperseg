@@ -1,0 +1,12 @@
+defaults:
+    - _self_
+    - dataset: hyko2
+
+dataset: 
+    spectral_average: False
+    pca: null
+    pca_out_dir: '.'
+    debug: False # if true the dataset is reduced to 5 samples overall
+    num_workers: 8
+    normalize: False
+    half_precision: False

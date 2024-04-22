@@ -1,4 +1,5 @@
 name: 'hsiroad'
+log_name: 'hsiroad'
 basepath: '/mnt/data/datasets/hsi_road/hsi_road'
 sensortype: 'nir'
 batch_size: 32

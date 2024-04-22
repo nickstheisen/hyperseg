@@ -1,4 +1,5 @@
 name: agunet
+log_name: 'agunet'
 loss_name: 'cross_entropy'
 learning_rate: 0.001
 optimizer_name: 'AdamW'

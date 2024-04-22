@@ -1,4 +1,5 @@
 name: 'hyko2'
+log_name: 'hyko2pca1'
 basepath: '/mnt/data/datasets/hyko2'
 label_set: 'semantic'
 batch_size: 16

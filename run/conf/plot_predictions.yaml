@@ -11,21 +11,6 @@ model:
     rich_train_log: False
     ckpt: ???
 
-training:
-    resume_path: null
-    max_epochs: 500
-    mat_mul_precision: 'high' # can be set to 'medium'|'high'|'highest'
-    seed: 42
-    accelerator: 'gpu'
-    devices: [0]
-    early_stopping: False
-
-logging:
-    project_name: ??? # required field, must be set by user
-    path: '/mnt/data/logs/'
-    tb_logger: True
-    wb_logger: False
-
 dataset: 
     spectral_average: False
     pca: null
@@ -34,6 +19,4 @@ dataset:
     num_workers: 8
     normalize: False
     half_precision: False
-    synth_rgb: False
-    rgb_out_dir: '.'
     drop_last: False

@@ -24,7 +24,7 @@ os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:256"
 
 
 valid_datasets = ['hsidrive','whuohs','hyko2', 'hsiroad', 'hcv2']
-valid_models = ['unet', 'agunet', 'spectr']
+valid_models = ['unet', 'agunet', 'spectr', 'deeplabv3plus']
 
 def make_reproducible(manual_seed=42):
     seed_everything(manual_seed, workers=True)
@@ -50,6 +50,7 @@ def train(cfg):
     ## General
     torch.set_float32_matmul_precision(cfg.training.mat_mul_precision) 
     make_reproducible(cfg.training.seed)
+
     
     ## Logging
     log_dir = Path(cfg.logging.path+f"{cfg.logging.project_name}")
@@ -58,16 +59,25 @@ def train(cfg):
     loggers = []
 
     ts = datetime.now().strftime("%Y%m%d_%H-%M-%S")
+    pt = "" # full pretrained
+    npt = "" # no pretrained backbone
+    if cfg.model.name == 'deeplabv3plus':
+        if cfg.model.pretrained_weights is not None:
+            pt = "-PT"
+        if not cfg.model.pretrained_backbone:
+            npt = "-NPT"
+    logname_run = f"{cfg.dataset.log_name}-{cfg.model.log_name}{pt}{npt}-{ts}"
+
     if cfg.logging.tb_logger:
         loggers.append(pl_loggers.TensorBoardLogger(
-                version=f"{cfg.dataset.name}-{cfg.model.name}-{ts}",
+                version=logname_run,
                 save_dir=log_dir,
         ))
 
     if cfg.logging.wb_logger:
         wandb.finish()
         loggers.append(pl_loggers.WandbLogger(
-                name=f"{cfg.dataset.name}-{cfg.model.name}-{ts}",
+                name=logname_run,
                 project=f"{cfg.logging.project_name}",
                 save_dir=log_dir,
         ))
@@ -76,7 +86,7 @@ def train(cfg):
     callbacks.append(
         ModelCheckpoint(
             monitor="Validation/jaccard",
-            filename="checkpoint-"+cfg.model.name+"-epoch-{epoch:02d}-val-iou-{Validation/jaccard:.3f}",
+            filename="checkpoint-"+cfg.model.log_name+"-epoch-{epoch:02d}-val-iou-{Validation/jaccard:.3f}",
             auto_insert_metric_name=False,
             save_top_k=1,
             mode='max'
@@ -88,7 +98,7 @@ def train(cfg):
         callbacks.append(
             EarlyStopping(
                 monitor="Validation/jaccard",
-                patience=50,
+                patience=15,
                 mode="max"
             )
         )
@@ -109,8 +119,9 @@ def train(cfg):
         cfg.model.ignore_index = datamodule.undef_idx
         cfg.model.label_def = datamodule.label_def
 
+    print("Channels: ", cfg.model.n_channels)
+
     model = get_model(cfg.model)
-    
     ## Misc
     if cfg.model.compile:
         model = torch.compile(model)

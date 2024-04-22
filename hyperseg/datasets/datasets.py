@@ -28,6 +28,7 @@ def get_datamodule(cfg):
             pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
             ignore_water=cfg.ignore_water,      # water class is ignored 
+            drop_last=cfg.drop_last,
         )
     elif cfg.name == 'whuohs':
         datamodule = WHUOHS(
@@ -41,6 +42,7 @@ def get_datamodule(cfg):
             pca=cfg.pca,
             pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
+            drop_last=cfg.drop_last,
         )
     elif cfg.name == 'hyko2':
         datamodule = HyKo2(
@@ -54,6 +56,7 @@ def get_datamodule(cfg):
             pca=cfg.pca,
             pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
+            drop_last=cfg.drop_last
         )
     elif cfg.name == 'hsiroad':
         datamodule = HSIRoad(
@@ -65,6 +68,7 @@ def get_datamodule(cfg):
             label_def=label_def_dir.joinpath(cfg.label_def),
             manual_seed=cfg.manual_seed,
             debug=cfg.debug,
+            drop_last=cfg.drop_last,
         )
     elif cfg.name == 'hcv2':
         datamodule = HyperspectralCityV2(
@@ -79,6 +83,7 @@ def get_datamodule(cfg):
             pca_out_dir=cfg.pca_out_dir,
             debug=cfg.debug,
             half_precision=cfg.half_precision,
+            drop_last=cfg.drop_last,
         )
 
     else:

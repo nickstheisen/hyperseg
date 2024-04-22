@@ -1,4 +1,5 @@
 name: 'hsidrive'
+log_name: 'hsidrive'
 basepath: '/mnt/data/datasets/hsidrive'
 batch_size: 32
 train_prop: 0.6

@@ -1,7 +1,7 @@
 0, undefined, 0, 0, 0
 1, road, 128, 64, 128
 2, sidewalk, 244, 35, 232
-3, lane_markers, 255, 0, 255
+3, lane_markers, 255, 0, 0
 4, grass, 0, 255, 0
 5, vegetation, 107, 142, 35
 6, panels/signs/trafficlight, 250, 170, 30

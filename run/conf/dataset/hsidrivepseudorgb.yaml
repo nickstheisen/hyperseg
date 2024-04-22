@@ -1,0 +1,7 @@
+name: 'hsidrive'
+log_name: 'hsidrivepseudorgb'
+basepath: '/mnt/data/datasets/hsidrive/pseudorgb/'
+batch_size: 32
+label_def: "hsidrive_labeldef_noWater.txt"
+manual_seed: 42 
+ignore_water: True

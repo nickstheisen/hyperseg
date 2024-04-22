@@ -53,7 +53,7 @@ class HyperspectralCityV2(HSDataModule):
     def setup(self, stage: Optional[str] = None):
 
         dataset = HSDataset(self.filepath_train, transform=self.transform, debug=self.debug)
-        dataset = HSDataset(self.filepath_test, transform=self.transform, debug=self.debug)
+        self.dataset_test = HSDataset(self.filepath_test, transform=self.transform, debug=self.debug)
 
         # Train-test-split is 80/20. From those 80% we use 10% for validation and 90% for training
         train_size = round(0.9 * len(dataset))

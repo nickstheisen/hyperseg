@@ -1,6 +1,6 @@
 name: 'hyko2'
-log_name: 'hyko2'
-basepath: '/mnt/data/datasets/hyko2'
+log_name: 'hyko2rgb'
+basepath: '/mnt/data/datasets/hyko2/rgb'
 label_set: 'semantic'
 batch_size: 16
 manual_seed: 42

@@ -1,0 +1,11 @@
+name: 'hcv2'
+log_name: 'hcv2_hrpca1'
+basepath: '/mnt/data/datasets/hcv2/downscaled/'
+batch_size: 4
+manual_seed: 42
+half_precision: True
+label_def: 'HCv2_labeldef.txt'
+num_workers: 4
+pca: 1
+pca_out_dir: '/mnt/data/dataset/hcv2/pca1'
+

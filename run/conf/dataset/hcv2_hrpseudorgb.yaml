@@ -1,0 +1,8 @@
+name: 'hcv2'
+log_name: 'hcv2_hrpseudorgb'
+basepath: '/mnt/data/datasets/hcv2/downscaled/rgb-nohisteq/'
+batch_size: 4
+manual_seed: 42
+half_precision: True
+label_def: 'HCv2_labeldef.txt'
+num_workers: 4
