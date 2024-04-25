@@ -19,7 +19,7 @@ A framework for **hyperspectral semantic segmentation** based on pytorch and pyt
 ### Installation
 * install Nvidia driver + CUDA (tested: driver 470.82/525.125.06 with CUDA 11.4/12.0)
 * create environment using python=3.11
-* `pip install .`
+* `pip install -e .`
 
 ### Dataset Preparation
 

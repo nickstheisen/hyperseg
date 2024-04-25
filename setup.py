@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='Hyperspectral Semantic Segmentation',
+    name='hyperseg',
     version='0.1.0',
     author='Nick Theisen',
     author_email='nicktheisen@uni-koblenz.de',
