@@ -65,7 +65,7 @@ python run/test.py logging.project_name=<project_name> model.ckpt=<path_to_check
 |HyKo2-VIS|U-Net                        |85.36|68.15|68.55|57.39|
 | |RU-Net (pRGB)                         |89.18|73.92|75.04|64.67|
 |HSI-Drive-V2|U-Net                     |94.95|74.74|76.08|64.95|
-| |RU-Net (PCA1)|                        |97.02|86.80|87.76|79.23|
+| |RU-Net (PCA1)                        |97.02|86.80|87.76|79.23|
 | | |                                   |    |    |    |    |
 |**Average </br> Performance**|U-Net    |88.52|63.84|64.27|53.36|
 | |RU-Net (pRGB)                         |91.15|71.09|71.80|61.34|
