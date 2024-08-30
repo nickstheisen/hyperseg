@@ -27,7 +27,7 @@ A framework for **hyperspectral semantic segmentation** based on pytorch and pyt
 
 2. **HSI-Drive**: Can be downloaded [here](https://ipaccess.ehu.eus/HSI-Drive/). For uncompressing the zip-file a password is required. Follow the instructions on the website
 
-3. **Hyperspectral City v2.0**: Can be downloaded [here](https://pbdl-ws.github.io/pbdl2021/challenge/download.html). To use the our DataLoader it is required to decompress the data and convert it to a hdf5-file (see [convert_hsds_to_hdf](https://github.com/nickstheisen/hyperseg/blob/main/hyperseg/datasets/pbdl_utils.py#L56). At the time of our experimentation only train set from the competition was available which we split up into train/test/validation. 
+3. **Hyperspectral City v2.0**: Can be downloaded [here](https://pbdl-ws.github.io/pbdl2021/challenge/download.html). To use the our DataLoader it is required to decompress the data and convert it to a hdf5-file (see [convert_hsds_to_hdf](https://github.com/nickstheisen/hyperseg/blob/main/hyperseg/datasets/pbdl_utils.py#L56). 
 
 4. **HSI-Road**: Follow instructions on [project page](https://github.com/NUST-Machine-Intelligence-Laboratory/hsi_road)
 
