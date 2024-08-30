@@ -24,6 +24,7 @@ setup(
         "tensorboard",
         "tifffile",
         "torch",
+        "numpy==1.26.4",
         "torchinfo",
         "torchmetrics>=1.0.0",
         "torchsummary",

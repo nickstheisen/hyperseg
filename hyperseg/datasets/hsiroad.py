@@ -15,7 +15,7 @@ from hyperseg.datasets.analysis.tools import StatCalculator
 from hyperseg.datasets.transforms import ToTensor, Normalize, SpectralAverage
 
 class HSIRoad(pl.LightningDataModule):
-    def __init__( 
+    def __init__(
             self,
             basepath: str,
             sensortype: str, # vis, nir, rgb
@@ -27,17 +27,19 @@ class HSIRoad(pl.LightningDataModule):
             normalize: bool=False,
             spectral_average: bool=False,
             debug: bool = False,
+            drop_last: bool = False,
             ):
         super().__init__()
-        
+
         self.save_hyperparameters()
 
         self.basepath = Path(basepath)
         self.sensortype = sensortype
         self.debug = debug
+        self.drop_last = drop_last
 
         self.spectral_average = spectral_average
-        
+
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.label_def = label_def
@@ -75,7 +77,7 @@ class HSIRoad(pl.LightningDataModule):
         img, _ = dataset[0]
         self.img_shape = img.shape[1:]
         self.n_channels = img.shape[0]
-      
+
     def class_histograms(self):
         if self.c_hist_train is not None :
             return (self.c_hist_train, self.c_hist_val, self.c_hist_test)
@@ -90,9 +92,9 @@ class HSIRoad(pl.LightningDataModule):
                                 mode='train',
                                 debug=self.debug)
 
-        self.dataset_val = HSIRoadDataset(                                
-                                data_dir=self.basepath, 
-                                collection=self.sensortype, 
+        self.dataset_val = HSIRoadDataset(
+                                data_dir=self.basepath,
+                                collection=self.sensortype,
                                 transform=self.transform,
                                 mode='val',
                                 debug=self.debug)
@@ -117,7 +119,8 @@ class HSIRoad(pl.LightningDataModule):
                 batch_size=self.batch_size,
                 shuffle=True,
                 pin_memory=True,
-                num_workers=self.num_workers)
+                num_workers=self.num_workers,
+                drop_last=self.drop_last)
     def val_dataloader(self):
         return DataLoader(
                 self.dataset_val,
@@ -131,7 +134,7 @@ class HSIRoad(pl.LightningDataModule):
         # ation sets. They use the validation set also as test set. We do the same to keep experiments
         # comparable
         return DataLoader(
-                self.dataset_val, 
+                self.dataset_val,
                 batch_size=self.batch_size,
                 shuffle=False,
                 pin_memory=True,
@@ -175,15 +178,15 @@ class HSIRoadDataset(Dataset):
         self.data_dir = data_dir
         self.collection = collection.lower()
         self.debug=debug
-        
+
         # mode == 'train' || mode == 'validation''
         path = os.path.join(data_dir, 'train.txt' if mode == 'train' else 'valid.txt')
-        
+
         if mode == 'full':
             path = os.path.join(data_dir, 'all.txt')
 
         self.name_list = np.genfromtxt(path, dtype='str')
-        
+
         if self.debug:
             if mode =='train':
                 self.name_list = self.name_list[:60]
