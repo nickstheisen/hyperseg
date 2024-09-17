@@ -11,8 +11,8 @@ A framework for **hyperspectral semantic segmentation** based on pytorch and pyt
 
 ### Supported Models
 * U-Net ([paper](https://link.springer.com/chapter/10.1007/978-3-319-24574-4_28))
-* Attention-Gated U-Net ([paper](https://ieeexplore.ieee.org/document/9306920); not well-tested)
-* SpecTr ([paper](https://arxiv.org/abs/2103.03604))
+* DeeplabV3+ ([paper](https://link.springer.com/chapter/10.1007/978-3-030-01234-2_49))
+* RU-Net (regularized U-Net, ours)
 
 ## Setup
 
@@ -58,16 +58,54 @@ python run/test.py logging.project_name=<project_name> model.ckpt=<path_to_check
 
 ## Benchmark
 
-|Dataset|Approach|$R_\mu$|$R_M$|$F_{1_{M}}$|$J_M$|
-|---|---|---|---|---|---|
-|HCV2|U-Net                              |85.25|48.62|48.18|37.73|
-| |RU-Net (PCA1)                         |88.25|58.07|55.43|44.26|
-|HyKo2-VIS|U-Net                        |85.36|68.15|68.55|57.39|
-| |RU-Net (pRGB)                         |89.18|73.92|75.04|64.67|
-|HSI-Drive-V2|U-Net                     |94.95|74.74|76.08|64.95|
-| |RU-Net (PCA1)                        |97.02|86.80|87.76|79.23|
-| | |                                   |    |    |    |    |
-|**Average </br> Performance**|U-Net    |88.52|63.84|64.27|53.36|
-| |RU-Net (pRGB)                         |91.15|71.09|71.80|61.34|
-|**Worst-Case </br> Performance**|U-Net |82.25|48.63|48.18|37.73|
-| |RU-Net (PCA1)                        |85.61|58.07|55.43|44.26|
+|Dataset|Approach|Data|$R_\mu$|$R_M$|$F_{1_{M}}$|$J_M$|
+|---|---|---|---|---|---|---|
+|HCV2|U-Net|HSI                          |85.25|48.62|48.18|37.73|
+| |RU-Net|HSI                            |87.63|54.14|53.26|43.33|
+| |RU-Net|PCA1                           |88.25|58.07|55.43|44.26|
+| |RU-Net|pRGB                           |87.95|56.65|55.46|44.03|
+| |DL3+|HSI                              |86.60|53.15|51.83|40.79|
+| |DL3+|PCA1                             |86.64|54.46|52.90|41.58|
+| |DL3+|pRGB                             |87.00|55.33|54.08|42.58|
+| |DL3+(BB)|pRGB                         |**90.26**|**64.10**|**61.93**|**50.04**|
+| |(*DL3+(BB)*|*RGB*                      |*91.22*|*65.87*|*63.33*|*52.11*)|
+| |DL3+(PT)|pRGB                         |89.62|61.91|60.17|48.47
+|HyKo2|U-Net|HSI                         |85.36|68.15|68.55|57.39|
+| |RU-Net|HSI                            |86.72|68.79|69.19|58.64|
+| |RU-Net|PCA1                           |85.61|68.09|70.01|58.67|
+| |RU-Net|pRGB                           |89.18|73.92|75.04|64.67|
+| |DL3+|HSI                              |84.10|63.01|64.90|53.22|
+| |DL3+|PCA1                             |79.99|61.59|63.00|50.40|
+| |DL3+|pRGB                             |84.64|65.30|66.56|54.82|
+| |DL3+(BB)|pRGB                         |**90.49**|**74.87**|**77.11**|**66.77**|
+| |DL3+(PT)|pRGB                         |88.62|73.97|76.79|65.41|
+|HSI-Drive|U-Net|HSI                     |94.95|74.74|76.08|64.95|
+| |RU-Net|HSI                            |96.08|79.82|82.34|72.18|
+| |RU-Net|PCA1                           |97.02|**86.80**|**87.76**|**79.23**|
+| |RU-Net|pRGB                           |96.32|82.70|84.91|75.31|
+| |DL3+|HSI                              |92.51|65.58|67.86|56.63|
+| |DL3+|PCA1                             |90.88|62.93|64.31|52.62|
+| |DL3+|pRGB                             |92.74|66.59|69.46|57.84|
+| |DL3+(BB)|pRGB                         |**97.09**|83.93|86.41|77.44|
+| |DL3+(PT)|pRGB                         |95.69|81.95|84.09|73.84|
+| | |                                    |    |    |    |    |
+|**Average </br> Performance**|U-Net|HSI |88.52|63.84|64.27|53.36|
+| |RU-Net|HSI                            |90.14|67.58|68.26|57.68|
+| |RU-Net|PCA1                           |90.29|70.99|71.07|60.72|
+| |RU-Net|pRGB                           |91.15|71.09|71.80|61.34|
+| |DL3+|HSI                              |87.74|60.58|61.53|50.21|
+| |DL3+|PCA1                             |85.84|59.66|60.07|48.20|
+| |DL3+|pRGB                             |88.13|62.41|63.37|51.75|
+| |DL3+(BB)|pRGB                         |**92.61**|**74.30**|**75.15**|**64.75**|
+| |DL3+(PT)|pRGB                         |91.31|72.61|73.68|62.57|
+|**Worst-Case </br> Performance**|U-Net|HSI |82.25|48.63|48.18|37.73|
+| |RU-Net|HSI                               |86.72|54.14|53.26|42.23| 
+| |RU-Net|PCA1                              |85.61|58.07|55.43|44.26|
+| |RU-Net|pRGB                              |87.95|56.65|55.46|44.03|
+| |DL3+|HSI                                 |84.10|53.15|51.83|40.79|
+| |DL3+|PCA1                                |79.99|54.46|52.90|41.58|
+| |DL3+|pRGB                                |84.64|55.33|54.08|42.58|
+| |DL3+(BB)|pRGB                            |**90.26**|**64.10**|**61.93**|**50.04**|
+| |DL3+(PT)|pRGB                            |88.62|61.91|60.17|48.47|
+
+The results highlighted in *italics* where achieved by using additional data from an RGB cam and are therefore surrounded in parenthesis. DL3+ stands for DeepLabV3+. BB suffix means that we used a MobileNetV2 backbone network pretrained on ImageNet and then finetuned on pseudo-RGB images derived from HSI. PT suffix means that we used a MobileNetV2 backbone network pretrained on CityScapes without further fine-tuning. all layers except for output-layer were frozen. 
