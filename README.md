@@ -1,4 +1,5 @@
-# Hyperseg
+<p align="center"><img src="https://github.com/user-attachments/assets/e741234c-00f8-4d19-93e2-48f7ef1c27b3" alt="hyperseg logo" width=300/></p>
+
 
 A framework for **hyperspectral semantic segmentation** based on pytorch and pytorch-lightning. 
 
