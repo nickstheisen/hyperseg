@@ -1,7 +1,11 @@
 <p align="center"><img src="https://github.com/user-attachments/assets/e741234c-00f8-4d19-93e2-48f7ef1c27b3" alt="hyperseg logo" width=300/></p>
 
 
-A framework for **hyperspectral semantic segmentation** based on pytorch and pytorch-lightning. 
+A framework for **hyperspectral semantic segmentation** based on pytorch and pytorch-lightning. This repository is part of a publication at 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2024) with the title 
+
+*"HS3-Bench: A Benchmark and Strong Baseline for Hyperspectral Semantic Segmentation in Driving Scenarios"* 
+
+Find the accepted version of the on arXiv: [paper](http://arxiv.org/abs/2409.11205)
 
 ### Supported Datasets
 * [HyKo2](https://wp.uni-koblenz.de/hyko/) ([paper](https://openaccess.thecvf.com/content_ICCV_2017_workshops/w3/html/Winkens_HyKo_A_Spectral_ICCV_2017_paper.html))
@@ -110,3 +114,18 @@ python run/test.py logging.project_name=<project_name> model.ckpt=<path_to_check
 | |DL3+(PT)|pRGB                            |88.62|61.91|60.17|48.47|
 
 The results highlighted in *italics* where achieved by using additional data from an RGB cam and are therefore surrounded in parenthesis. DL3+ stands for DeepLabV3+. BB suffix means that we used a MobileNetV2 backbone network pretrained on ImageNet and then finetuned on pseudo-RGB images derived from HSI. PT suffix means that we used a MobileNetV2 backbone network pretrained on CityScapes without further fine-tuning. all layers except for output-layer were frozen. 
+
+## Reference
+If you use our code please reference our paper *(Bibtex to final published version will be provided as soon as possible)*.
+```
+@misc{theisen2024hs3benchbenchmarkstrongbaseline,
+      title={HS3-Bench: A Benchmark and Strong Baseline for Hyperspectral Semantic Segmentation in Driving Scenarios}, 
+      author={Nick Theisen and Robin Bartsch and Dietrich Paulus and Peer Neubert},
+      year={2024},
+      doi={https://doi.org/10.48550/arXiv.2409.11205},
+      eprint={2409.11205},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2409.11205}, 
+}
+```
