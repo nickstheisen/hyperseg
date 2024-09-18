@@ -5,7 +5,7 @@ A framework for **hyperspectral semantic segmentation** based on pytorch and pyt
 
 *"HS3-Bench: A Benchmark and Strong Baseline for Hyperspectral Semantic Segmentation in Driving Scenarios"* 
 
-Find the accepted version of the on arXiv: [paper](http://arxiv.org/abs/2409.11205)
+Find the accepted version on arXiv: [paper](http://arxiv.org/abs/2409.11205)
 
 ### Supported Datasets
 * [HyKo2](https://wp.uni-koblenz.de/hyko/) ([paper](https://openaccess.thecvf.com/content_ICCV_2017_workshops/w3/html/Winkens_HyKo_A_Spectral_ICCV_2017_paper.html))
