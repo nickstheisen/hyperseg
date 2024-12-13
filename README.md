@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/user-attachments/assets/e741234c-00f8-4d19-93e2-48f7ef1c27b3" alt="hyperseg logo" width=300/></p>
+<p align="center"><img src="https://github.com/user-attachments/assets/75a77c8c-db6a-4e1c-b070-fe2b21508524" alt="hs3-bench logo" width=300/></p>
 
 
 A framework for **hyperspectral semantic segmentation** based on pytorch and pytorch-lightning. This repository is part of a publication at 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2024) with the title 
