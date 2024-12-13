@@ -63,7 +63,7 @@ python run/test.py logging.project_name=<project_name> model.ckpt=<path_to_check
 
 ## Benchmark
 
-|Dataset|Approach|Data|$R_\mu$|$R_M$|$F_{1_{M}}$|$J_M$|
+|Dataset|Approach|Data|$Acc_\mu$|$Acc_M$|$F_{1_{M}}$|$J_M$|
 |---|---|---|---|---|---|---|
 |HCV2|U-Net|HSI                          |85.25|48.62|48.18|37.73|
 | |RU-Net|HSI                            |87.63|54.14|53.26|43.33|
