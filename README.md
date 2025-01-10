@@ -5,7 +5,7 @@ A framework for **hyperspectral semantic segmentation** based on pytorch and pyt
 
 *"HS3-Bench: A Benchmark and Strong Baseline for Hyperspectral Semantic Segmentation in Driving Scenarios"* 
 
-Find the accepted version on arXiv: [paper](http://arxiv.org/abs/2409.11205)
+Find the accepted version on arXiv: [paper](http://arxiv.org/abs/2409.11205) or on IEEEXplore [paper](https://ieeexplore.ieee.org/document/10801768)
 
 ### Supported Datasets
 * [HyKo2](https://wp.uni-koblenz.de/hyko/) ([paper](https://openaccess.thecvf.com/content_ICCV_2017_workshops/w3/html/Winkens_HyKo_A_Spectral_ICCV_2017_paper.html))
@@ -116,16 +116,16 @@ python run/test.py logging.project_name=<project_name> model.ckpt=<path_to_check
 The results highlighted in *italics* where achieved by using additional data from an RGB cam and are therefore surrounded in parenthesis. DL3+ stands for DeepLabV3+. BB suffix means that we used a MobileNetV2 backbone network pretrained on ImageNet and then finetuned on pseudo-RGB images derived from HSI. PT suffix means that we used a MobileNetV2 backbone network pretrained on CityScapes without further fine-tuning. all layers except for output-layer were frozen. 
 
 ## Reference
-If you use our code please reference our paper *(Bibtex to final published version will be provided as soon as possible)*.
+If you use our code please reference our paper.
 ```
-@misc{theisen2024hs3benchbenchmarkstrongbaseline,
-      title={HS3-Bench: A Benchmark and Strong Baseline for Hyperspectral Semantic Segmentation in Driving Scenarios}, 
-      author={Nick Theisen and Robin Bartsch and Dietrich Paulus and Peer Neubert},
-      year={2024},
-      doi={https://doi.org/10.48550/arXiv.2409.11205},
-      eprint={2409.11205},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2409.11205}, 
-}
+@INPROCEEDINGS{10801768,
+  author={Theisen, Nick and Bartsch, Robin and Paulus, Dietrich and Neubert, Peer},
+  booktitle={2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)}, 
+  title={HS3-Bench: A Benchmark and Strong Baseline for Hyperspectral Semantic Segmentation in Driving Scenarios}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={5895-5901},
+  keywords={Measurement;Learning systems;Protocols;Codes;Semantic segmentation;Training data;Benchmark testing;Standards;Intelligent robots;Hyperspectral imaging},
+  doi={10.1109/IROS58592.2024.10801768}}
 ```
